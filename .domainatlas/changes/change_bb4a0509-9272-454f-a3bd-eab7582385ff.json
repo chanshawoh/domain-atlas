@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "id": "change_bb4a0509-9272-454f-a3bd-eab7582385ff",
+  "kind": "correction",
+  "recordedAt": "2026-08-20T06:43:55.837Z",
+  "request": "纠正首条 DomainAtlas 实施记录中过窄的受影响能力范围",
+  "summary": "过滤非代码和测试路径后再消耗图谱查询预算，补充多业务模块影响；同时实现 correction/revert 的 supersedes 校验并验证追加式纠错",
+  "source": {
+    "host": "codex",
+    "taskId": "01a01805-2b60-7272-aa5c-23b481c36c3a"
+  },
+  "changedFiles": [
+    ".gitignore",
+    "DEV_STATE.md",
+    "README.md",
+    "docs/mvp-architecture.md",
+    "package.json",
+    "pnpm-lock.yaml",
+    "src/adapters/codex.ts",
+    "src/cli.ts",
+    "src/code-graph/codebase-memory-cli-provider.ts",
+    "src/code-graph/fallback-provider.ts",
+    "src/code-graph/provider.ts",
+    "src/core/change-recorder.ts",
+    "src/core/model.ts",
+    "src/core/ports.ts",
+    "src/git/git-observer.ts",
+    "src/index.ts",
+    "src/runtime.ts",
+    "src/storage/file-domain-model-store.ts",
+    "tests/first-task.e2e.test.ts",
+    "tests/provider-chain.test.ts",
+    "tsconfig.json"
+  ],
+  "affectedCapabilityIds": [
+    "capability_07085c33f4a21577",
+    "capability_5d23627e9487f267",
+    "capability_5ee9d222e27c7f87",
+    "capability_8455b82daea23c9a",
+    "capability_8953458a60e6528f",
+    "capability_b62c5e1e27898574",
+    "capability_cb5b542d7cdc112f"
+  ],
+  "tests": [
+    {
+      "command": "pnpm test",
+      "status": "passed"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "requirement",
+      "value": "纠正首条 DomainAtlas 实施记录中过窄的受影响能力范围"
+    },
+    {
+      "kind": "changed-file",
+      "value": ".gitignore"
+    },
+    {
+      "kind": "changed-file",
+      "value": "DEV_STATE.md"
+    },
+    {
+      "kind": "changed-file",
+      "value": "README.md"
+    },
+    {
+      "kind": "changed-file",
+      "value": "docs/mvp-architecture.md"
+    },
+    {
+      "kind": "changed-file",
+      "value": "package.json"
+    },
+    {
+      "kind": "changed-file",
+      "value": "pnpm-lock.yaml"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/adapters/codex.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/cli.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/code-graph/codebase-memory-cli-provider.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/code-graph/fallback-provider.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/code-graph/provider.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/core/change-recorder.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/core/model.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/core/ports.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/git/git-observer.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/index.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/runtime.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/storage/file-domain-model-store.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "tests/first-task.e2e.test.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "tests/provider-chain.test.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "tsconfig.json"
+    },
+    {
+      "kind": "code-graph",
+      "value": "codebase-memory-mcp"
+    },
+    {
+      "kind": "test",
+      "value": "pnpm test: passed"
+    }
+  ],
+  "supersedes": "change_6b6c7907-325e-42e7-bcec-ce1a4a31934c"
+}

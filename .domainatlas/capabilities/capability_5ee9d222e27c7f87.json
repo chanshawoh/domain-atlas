@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "capability_5ee9d222e27c7f87",
+  "domainId": "domain_0d45f5fd462b8c70",
+  "name": "ports",
+  "confidence": "medium",
+  "evidence": [
+    {
+      "source": "codebase-memory-mcp",
+      "reference": "src/core/ports.ts",
+      "confidence": "medium"
+    }
+  ]
+}

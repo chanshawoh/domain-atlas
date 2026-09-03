@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "domain_4b5174ed2e5d220f",
+  "name": "adapters",
+  "confidence": "medium",
+  "evidence": [
+    {
+      "source": "codebase-memory-mcp",
+      "reference": "Users-woodynew-mydata-project-codex-DomainAtlas.src.adapters.codex.CodexAdapter",
+      "confidence": "medium"
+    }
+  ]
+}

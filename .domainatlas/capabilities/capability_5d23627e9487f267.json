@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "capability_5d23627e9487f267",
+  "domainId": "domain_869719ba5d192fb7",
+  "name": "CodebaseMemoryCliProvider",
+  "confidence": "medium",
+  "evidence": [
+    {
+      "source": "codebase-memory-mcp",
+      "reference": "Users-woodynew-mydata-project-codex-DomainAtlas.src.code-graph.codebase-memory-cli-provider.CodebaseMemoryCliProvider",
+      "confidence": "medium"
+    }
+  ]
+}

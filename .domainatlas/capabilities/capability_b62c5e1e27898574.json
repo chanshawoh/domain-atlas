@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "capability_b62c5e1e27898574",
+  "domainId": "domain_0d45f5fd462b8c70",
+  "name": "ChangeRecorder",
+  "confidence": "medium",
+  "evidence": [
+    {
+      "source": "codebase-memory-mcp",
+      "reference": "Users-woodynew-mydata-project-codex-DomainAtlas.src.core.change-recorder.ChangeRecorder",
+      "confidence": "medium"
+    }
+  ]
+}

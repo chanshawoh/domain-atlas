@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "id": "change_6b6c7907-325e-42e7-bcec-ce1a4a31934c",
+  "kind": "change",
+  "recordedAt": "2026-08-20T06:42:11.806Z",
+  "request": "向着 DomainAtlas 总体架构目标开始实施，并从第一次真实 Codex 开发任务开始记录业务变化",
+  "summary": "建立首个可执行垂直切片：Codex 事件适配、追加式事实存储、codebase-memory-mcp 优先及保底 Provider、Git 提交绑定投影、CLI 与端到端测试",
+  "source": {
+    "host": "codex",
+    "taskId": "01a01805-2b60-7272-aa5c-23b481c36c3a"
+  },
+  "changedFiles": [
+    ".gitignore",
+    "DEV_STATE.md",
+    "README.md",
+    "docs/mvp-architecture.md",
+    "package.json",
+    "pnpm-lock.yaml",
+    "src/adapters/codex.ts",
+    "src/cli.ts",
+    "src/code-graph/codebase-memory-cli-provider.ts",
+    "src/code-graph/fallback-provider.ts",
+    "src/code-graph/provider.ts",
+    "src/core/change-recorder.ts",
+    "src/core/model.ts",
+    "src/core/ports.ts",
+    "src/git/git-observer.ts",
+    "src/index.ts",
+    "src/runtime.ts",
+    "src/storage/file-domain-model-store.ts",
+    "tests/first-task.e2e.test.ts",
+    "tests/provider-chain.test.ts",
+    "tsconfig.json"
+  ],
+  "affectedCapabilityIds": [
+    "capability_8953458a60e6528f"
+  ],
+  "tests": [
+    {
+      "command": "pnpm test",
+      "status": "passed"
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "requirement",
+      "value": "向着 DomainAtlas 总体架构目标开始实施，并从第一次真实 Codex 开发任务开始记录业务变化"
+    },
+    {
+      "kind": "changed-file",
+      "value": ".gitignore"
+    },
+    {
+      "kind": "changed-file",
+      "value": "DEV_STATE.md"
+    },
+    {
+      "kind": "changed-file",
+      "value": "README.md"
+    },
+    {
+      "kind": "changed-file",
+      "value": "docs/mvp-architecture.md"
+    },
+    {
+      "kind": "changed-file",
+      "value": "package.json"
+    },
+    {
+      "kind": "changed-file",
+      "value": "pnpm-lock.yaml"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/adapters/codex.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/cli.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/code-graph/codebase-memory-cli-provider.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/code-graph/fallback-provider.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/code-graph/provider.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/core/change-recorder.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/core/model.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/core/ports.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/git/git-observer.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/index.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/runtime.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/storage/file-domain-model-store.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "tests/first-task.e2e.test.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "tests/provider-chain.test.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "tsconfig.json"
+    },
+    {
+      "kind": "code-graph",
+      "value": "codebase-memory-mcp"
+    },
+    {
+      "kind": "test",
+      "value": "pnpm test: passed"
+    }
+  ]
+}

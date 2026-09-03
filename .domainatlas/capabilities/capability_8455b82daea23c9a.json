@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "capability_8455b82daea23c9a",
+  "domainId": "domain_869719ba5d192fb7",
+  "name": "CodeGraphProvider",
+  "confidence": "medium",
+  "evidence": [
+    {
+      "source": "codebase-memory-mcp",
+      "reference": "Users-woodynew-mydata-project-codex-DomainAtlas.src.code-graph.provider.CodeGraphProvider",
+      "confidence": "medium"
+    }
+  ]
+}

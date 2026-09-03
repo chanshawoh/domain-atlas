@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "domain_0d45f5fd462b8c70",
+  "name": "core",
+  "confidence": "medium",
+  "evidence": [
+    {
+      "source": "codebase-memory-mcp",
+      "reference": "Users-woodynew-mydata-project-codex-DomainAtlas.src.core.change-recorder.ChangeRecorder",
+      "confidence": "medium"
+    }
+  ]
+}

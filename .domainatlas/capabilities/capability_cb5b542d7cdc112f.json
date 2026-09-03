@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "capability_cb5b542d7cdc112f",
+  "domainId": "domain_0d45f5fd462b8c70",
+  "name": "DomainModelStore",
+  "confidence": "medium",
+  "evidence": [
+    {
+      "source": "codebase-memory-mcp",
+      "reference": "Users-woodynew-mydata-project-codex-DomainAtlas.src.core.ports.DomainModelStore",
+      "confidence": "medium"
+    }
+  ]
+}

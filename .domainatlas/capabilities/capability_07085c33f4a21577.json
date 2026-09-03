@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "capability_07085c33f4a21577",
+  "domainId": "domain_869719ba5d192fb7",
+  "name": "IncrementalFallbackCodeGraphProvider",
+  "confidence": "medium",
+  "evidence": [
+    {
+      "source": "codebase-memory-mcp",
+      "reference": "Users-woodynew-mydata-project-codex-DomainAtlas.src.code-graph.fallback-provider.IncrementalFallbackCodeGraphProvider",
+      "confidence": "medium"
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+import type { CodexTaskCompletedEvent } from "../adapters/codex.js";
+import type { BusinessDiscovery, CodeGraphBudget, CodeGraphProvider } from "../code-graph/provider.js";
+import { createChangeId, type ChangeEvidence, type ChangeRecord } from "./model.js";
+import type { DomainModelStore, StoredChange } from "./ports.js";
+
+export interface RecordedChange extends StoredChange {
+  discovery: BusinessDiscovery;
+}
+
+export interface ChangeRecorderOptions {
+  projectRoot: string;
+  store: DomainModelStore;
+  codeGraphProvider: CodeGraphProvider;
+  now?: () => string;
+  createId?: () => string;
+  graphBudget?: CodeGraphBudget;
+}
+
+export class ChangeRecorder {
+  private readonly now: () => string;
+  private readonly createId: () => string;
+  private readonly graphBudget: CodeGraphBudget;
+
+  constructor(private readonly options: ChangeRecorderOptions) {
+    this.now = options.now ?? (() => new Date().toISOString());
+    this.createId = options.createId ?? createChangeId;
+    this.graphBudget = options.graphBudget ?? {
+      maxDepth: 2,
+      maxNodes: 20,
+      maxSnippetReads: 8,
+      maxTokens: 6000,
+    };
+  }
+
+  async recordCodexTask(event: CodexTaskCompletedEvent): Promise<RecordedChange> {
+    const request = event.request.trim();
+    const summary = event.summary.trim();
+    if (!request) {
+      throw new Error("Codex task request is required");
+    }
+    if (!summary) {
+      throw new Error("Codex task summary is required");
+    }
+    const kind = event.kind ?? "change";
+    if ((kind === "correction" || kind === "revert") && !event.supersedes) {
+      throw new Error(kind + " records must declare supersedes");
+    }
+    if (kind === "change" && event.supersedes) {
+      throw new Error("Only correction or revert records can declare supersedes");
+    }
+
+    const changedFiles = [...new Set(event.changedFiles.map((file) => file.trim()).filter(Boolean))].sort();
+    const discovery = await this.options.codeGraphProvider.discover({
+      projectRoot: this.options.projectRoot,
+      request,
+      changedFiles,
+      budget: this.graphBudget,
+    });
+    const evidence: ChangeEvidence[] = [
+      { kind: "requirement", value: request },
+      ...changedFiles.map((file) => ({ kind: "changed-file" as const, value: file })),
+      { kind: "code-graph", value: discovery.provider },
+      ...(event.tests ?? []).map((test) => ({
+        kind: "test" as const,
+        value: test.command + ": " + test.status,
+      })),
+    ];
+    const record: ChangeRecord = {
+      schemaVersion: 1,
+      id: this.createId(),
+      kind,
+      recordedAt: event.completedAt ?? this.now(),
+      request,
+      summary,
+      source: {
+        host: "codex",
+        ...(event.taskId ? { taskId: event.taskId } : {}),
+      },
+      changedFiles,
+      affectedCapabilityIds: discovery.capabilities.map((capability) => capability.id).sort(),
+      tests: event.tests ?? [],
+      evidence,
+      ...(event.supersedes ? { supersedes: event.supersedes } : {}),
+    };
+
+    await this.options.store.initialize();
+    for (const domain of discovery.domains) {
+      await this.options.store.addDomainIfAbsent(domain);
+    }
+    for (const capability of discovery.capabilities) {
+      await this.options.store.addCapabilityIfAbsent(capability);
+    }
+    const stored = await this.options.store.appendChange(record);
+    return { ...stored, discovery };
+  }
+}
