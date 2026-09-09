@@ -1,6 +1,7 @@
 import path from "node:path";
 import { createStableId, type BusinessCapability, type BusinessDomain } from "../core/model.js";
 import type { BusinessDiscovery, CodeGraphContext, CodeGraphProvider } from "./provider.js";
+import { limitDiscovery, validateBudget } from "./budget.js";
 
 const STRUCTURAL_SEGMENTS = new Set([
   "app",
@@ -39,11 +40,14 @@ export class IncrementalFallbackCodeGraphProvider implements CodeGraphProvider {
   readonly name = "incremental-fallback";
 
   async discover(context: CodeGraphContext): Promise<BusinessDiscovery> {
+    validateBudget(context.budget);
     const domains = new Map<string, BusinessDomain>();
     const capabilities = new Map<string, BusinessCapability>();
+    let budgetLimited = false;
 
     for (const changedFile of context.changedFiles) {
       if (domains.size + capabilities.size >= context.budget.maxNodes) {
+        budgetLimited = true;
         break;
       }
 
@@ -88,10 +92,11 @@ export class IncrementalFallbackCodeGraphProvider implements CodeGraphProvider {
       }
     }
 
-    return {
+    return limitDiscovery({
       domains: [...domains.values()],
       capabilities: [...capabilities.values()],
       provider: this.name,
-    };
+      ...(budgetLimited ? { budgetLimited: true } : {}),
+    }, context.budget);
   }
 }

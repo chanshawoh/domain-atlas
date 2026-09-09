@@ -40,6 +40,17 @@ export interface ChangeEvidence {
 
 export type ChangeKind = "change" | "correction" | "revert";
 
+export interface FileVersion {
+  oid: string;
+  mode: string;
+}
+
+export interface FileChange {
+  path: string;
+  before: FileVersion | null;
+  after: FileVersion | null;
+}
+
 export interface ChangeRecord {
   schemaVersion: 1;
   id: string;
@@ -52,6 +63,7 @@ export interface ChangeRecord {
     taskId?: string;
   };
   changedFiles: string[];
+  fileChanges?: FileChange[];
   affectedCapabilityIds: string[];
   tests: TestResult[];
   evidence: ChangeEvidence[];
@@ -66,4 +78,3 @@ export function createStableId(prefix: string, parts: string[]): string {
 export function createChangeId(): string {
   return "change_" + randomUUID();
 }
-

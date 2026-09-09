@@ -10,6 +10,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "pnpm run build && node --test dist/tests/*.test.js",
+    "test:graph": "pnpm run build && DOMAINATLAS_REAL_GRAPH=1 node --test dist/tests/codebase-memory.integration.test.js",
     "domainatlas": "node dist/src/cli.js"
   },
   "devDependencies": {
@@ -17,4 +18,3 @@
     "typescript": "^5.9.0"
   }
 }
-

@@ -12,7 +12,7 @@ const context: CodeGraphContext = {
   projectRoot: "/project",
   request: "记录业务变化",
   changedFiles: ["packages/orders/src/refund.ts"],
-  budget: { maxDepth: 2, maxNodes: 10, maxSnippetReads: 0, maxTokens: 0 },
+  budget: { maxDepth: 2, maxNodes: 10, maxSnippetReads: 0, maxTokens: 6000 },
 };
 
 test("falls back only when the primary provider is unavailable", async () => {
@@ -39,4 +39,3 @@ test("does not hide defects from the primary provider", async () => {
   const chain = new CodeGraphProviderChain(primary, new IncrementalFallbackCodeGraphProvider());
   await assert.rejects(chain.discover(context), /invalid graph response/);
 });
-

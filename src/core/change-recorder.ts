@@ -2,6 +2,7 @@ import type { CodexTaskCompletedEvent } from "../adapters/codex.js";
 import type { BusinessDiscovery, CodeGraphBudget, CodeGraphProvider } from "../code-graph/provider.js";
 import { createChangeId, type ChangeEvidence, type ChangeRecord } from "./model.js";
 import type { DomainModelStore, StoredChange } from "./ports.js";
+import { limitDiscovery } from "../code-graph/budget.js";
 
 export interface RecordedChange extends StoredChange {
   discovery: BusinessDiscovery;
@@ -48,18 +49,23 @@ export class ChangeRecorder {
     if (kind === "change" && event.supersedes) {
       throw new Error("Only correction or revert records can declare supersedes");
     }
+    if (event.supersedes && !(await this.options.store.listChanges()).some(
+      (change) => change.record.id === event.supersedes,
+    )) {
+      throw new Error("supersedes target does not exist: " + event.supersedes);
+    }
 
-    const changedFiles = [...new Set(event.changedFiles.map((file) => file.trim()).filter(Boolean))].sort();
-    const discovery = await this.options.codeGraphProvider.discover({
+    const changedFiles = [...new Set(event.changedFiles.filter(Boolean))].sort();
+    const discovery = limitDiscovery(await this.options.codeGraphProvider.discover({
       projectRoot: this.options.projectRoot,
       request,
       changedFiles,
       budget: this.graphBudget,
-    });
+    }), this.graphBudget);
     const evidence: ChangeEvidence[] = [
       { kind: "requirement", value: request },
       ...changedFiles.map((file) => ({ kind: "changed-file" as const, value: file })),
-      { kind: "code-graph", value: discovery.provider },
+      { kind: "code-graph", value: discovery.provider + (discovery.budgetLimited ? " (budget-limited)" : "") },
       ...(event.tests ?? []).map((test) => ({
         kind: "test" as const,
         value: test.command + ": " + test.status,
@@ -77,6 +83,7 @@ export class ChangeRecorder {
         ...(event.taskId ? { taskId: event.taskId } : {}),
       },
       changedFiles,
+      ...(event.fileChanges ? { fileChanges: event.fileChanges } : {}),
       affectedCapabilityIds: discovery.capabilities.map((capability) => capability.id).sort(),
       tests: event.tests ?? [],
       evidence,

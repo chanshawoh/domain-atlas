@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+atlas_root=$(git rev-parse --show-toplevel)
+exec node "$atlas_root/dist/src/cli.js" stage-records --write

@@ -1,4 +1,4 @@
-import type { ChangeKind, TestResult } from "../core/model.js";
+import type { ChangeKind, FileChange, TestResult } from "../core/model.js";
 import type { ChangeRecorder, RecordedChange } from "../core/change-recorder.js";
 
 export interface CodexTaskCompletedEvent {
@@ -7,6 +7,7 @@ export interface CodexTaskCompletedEvent {
   request: string;
   summary: string;
   changedFiles: string[];
+  fileChanges?: FileChange[];
   tests?: TestResult[];
   kind?: ChangeKind;
   supersedes?: string;
@@ -19,4 +20,3 @@ export class CodexAdapter {
     return this.recorder.recordCodexTask(event);
   }
 }
-

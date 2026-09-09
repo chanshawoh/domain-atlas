@@ -13,6 +13,7 @@ export interface DomainAtlasRuntime {
 export function createDomainAtlasRuntime(
   projectRoot: string,
   primaryCodeGraphProvider: CodeGraphProvider | null = new CodebaseMemoryCliProvider(),
+  createId?: () => string,
 ): DomainAtlasRuntime {
   const store = new FileDomainModelStore(projectRoot);
   const provider = new CodeGraphProviderChain(
@@ -23,6 +24,7 @@ export function createDomainAtlasRuntime(
     projectRoot,
     store,
     codeGraphProvider: provider,
+    createId,
   });
   return {
     adapter: new CodexAdapter(recorder),

@@ -3,6 +3,8 @@ import process from "node:process";
 import type { ChangeKind, TestStatus } from "./core/model.js";
 import { GitObserver } from "./git/git-observer.js";
 import { createDomainAtlasRuntime } from "./runtime.js";
+import { handleCodexHook } from "./adapters/codex-hooks.js";
+import { stageMatchingRecords } from "./git/stage-records.js";
 
 function values(args: string[], flag: string): string[] {
   const result: string[] = [];
@@ -33,11 +35,27 @@ function usage(): string {
     "  domainatlas init",
     "  domainatlas ingest-codex --request TEXT --summary TEXT [--task-id ID] [--kind KIND --supersedes ID] [--changed-file PATH]... [--test-command COMMAND --test-status STATUS]",
     "  domainatlas list",
+    "  domainatlas codex-hook  (reads one Codex hook JSON object from stdin)",
+    "  domainatlas stage-records [--write]  (preview by default)",
   ].join("\n");
 }
 
 async function main(): Promise<void> {
   const [command, ...args] = process.argv.slice(2);
+  if (command === "codex-hook") {
+    let input = "";
+    for await (const chunk of process.stdin) {
+      input += chunk;
+      if (Buffer.byteLength(input) > 1024 * 1024) throw new Error("Codex hook input exceeds 1 MiB");
+    }
+    process.stdout.write(JSON.stringify(await handleCodexHook(JSON.parse(input))) + "\n");
+    return;
+  }
+  if (command === "stage-records") {
+    if (args.some((arg) => arg !== "--write")) throw new Error("Usage: domainatlas stage-records [--write]");
+    process.stdout.write(JSON.stringify(await stageMatchingRecords(process.cwd(), args.includes("--write")), null, 2) + "\n");
+    return;
+  }
   const projectRoot = process.cwd();
   const runtime = createDomainAtlasRuntime(projectRoot);
 

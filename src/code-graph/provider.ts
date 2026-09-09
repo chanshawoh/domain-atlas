@@ -18,6 +18,7 @@ export interface BusinessDiscovery {
   domains: BusinessDomain[];
   capabilities: BusinessCapability[];
   provider: string;
+  budgetLimited?: boolean;
 }
 
 export interface CodeGraphProvider {
@@ -55,4 +56,3 @@ export class CodeGraphProviderChain implements CodeGraphProvider {
     }
   }
 }
-

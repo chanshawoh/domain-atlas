@@ -1,5 +1,6 @@
 import { constants } from "node:fs";
-import { access, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { access, link, mkdir, readFile, readdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { BusinessCapability, BusinessDomain, ChangeRecord } from "../core/model.js";
 import type { DomainModelStore, StoredChange } from "../core/ports.js";
@@ -22,16 +23,26 @@ async function exists(file: string): Promise<boolean> {
 }
 
 async function writeJsonIfAbsent(file: string, value: unknown): Promise<void> {
-  await mkdir(path.dirname(file), { recursive: true });
   try {
-    await writeFile(file, JSON.stringify(value, null, 2) + "\n", {
-      encoding: "utf8",
-      flag: "wx",
-    });
+    await writeJsonExclusive(file, value);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
       throw error;
     }
+  }
+}
+
+async function writeJsonExclusive(file: string, value: unknown): Promise<void> {
+  await mkdir(path.dirname(file), { recursive: true });
+  const temporary = file + "." + randomUUID() + ".tmp";
+  try {
+    await writeFile(temporary, JSON.stringify(value, null, 2) + "\n", { encoding: "utf8", flag: "wx" });
+    // Publish a complete file atomically without replacing an existing record.
+    await link(temporary, file);
+  } finally {
+    await unlink(temporary).catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== "ENOENT") throw error;
+    });
   }
 }
 
@@ -78,11 +89,7 @@ export class FileDomainModelStore implements DomainModelStore {
     assertSafeId(record.id);
     const relativePath = path.posix.join(".domainatlas", "changes", record.id + ".json");
     const absolutePath = path.join(this.projectRoot, relativePath);
-    await mkdir(path.dirname(absolutePath), { recursive: true });
-    await writeFile(absolutePath, JSON.stringify(record, null, 2) + "\n", {
-      encoding: "utf8",
-      flag: "wx",
-    });
+    await writeJsonExclusive(absolutePath, record);
     return { record, relativePath };
   }
 
@@ -105,4 +112,3 @@ export class FileDomainModelStore implements DomainModelStore {
     return changes;
   }
 }
-

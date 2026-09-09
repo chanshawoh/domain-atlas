@@ -1,0 +1,29 @@
+{
+  "description": "DomainAtlas records a Git snapshot at turn start and appends change facts at turn completion.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/dist/src/cli.js\" codex-hook",
+            "timeout": 60,
+            "statusMessage": "DomainAtlas: 保存任务开始状态"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/dist/src/cli.js\" codex-hook",
+            "timeout": 180,
+            "statusMessage": "DomainAtlas: 记录本轮业务变更"
+          }
+        ]
+      }
+    ]
+  }
+}

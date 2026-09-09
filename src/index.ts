@@ -1,4 +1,7 @@
 export * from "./adapters/codex.js";
+export * from "./adapters/codex-hooks.js";
+export * from "./git/git-snapshot.js";
+export * from "./git/stage-records.js";
 export * from "./code-graph/fallback-provider.js";
 export * from "./code-graph/codebase-memory-cli-provider.js";
 export * from "./code-graph/provider.js";
