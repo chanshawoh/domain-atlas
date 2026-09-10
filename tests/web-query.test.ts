@@ -1,0 +1,70 @@
+import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { promisify } from 'node:util';
+import test from 'node:test';
+import { createDomainAtlasRuntime } from '../src/runtime.js';
+import { readAtlas } from '../src/web/query.js';
+import { createWebServer } from '../src/web/server.js';
+
+const exec = promisify(execFile);
+test('Web projection preserves history, evidence and Git lifecycle without changing facts', async t => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'domainatlas-web-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const git = (args: string[]) => exec('git', args, { cwd: root });
+  await git(['init', '-b', 'main']);
+  await git(['config', 'user.name', 'Web Test']);
+  await git(['config', 'user.email', 'web@example.invalid']);
+  const empty = await readAtlas(root);
+  assert.equal(empty.project.initialized, false);
+  assert.deepEqual(empty.changes, []);
+  assert.deepEqual(await readdir(root), ['.git']);
+
+  const runtime = createDomainAtlasRuntime(root, null);
+  const original = await runtime.adapter.handleTaskCompleted({ request: '退款审核', summary: '支持退款审核', changedFiles: ['src/orders/refund.ts'], completedAt: '2026-09-10T01:00:00Z' });
+  const before = await readFile(path.join(root, original.relativePath), 'utf8');
+  await git(['add', '.domainatlas']);
+  await git(['commit', '-m', '记录业务事实']);
+  const correction = await runtime.adapter.handleTaskCompleted({ request: '补充退款审核', summary: '补充证据', changedFiles: ['src/orders/refund.ts'], kind: 'correction', supersedes: original.record.id, tests: [{ command: 'pnpm test', status: 'not-run' }], completedAt: '2026-09-10T02:00:00Z' });
+  const snapshot = await readAtlas(root);
+  assert.deepEqual(snapshot.totals, { domains: 1, capabilities: 1, changes: 2, pending: 1, committed: 1 });
+  assert.equal(snapshot.changes[0].id, correction.record.id);
+  assert.equal(snapshot.changes[0].supersedes, original.record.id);
+  assert.equal(snapshot.changes[0].kind, 'correction');
+  assert.equal(snapshot.changes[0].lifecycle.state, 'pending');
+  assert.equal(snapshot.changes[0].tests[0].status, 'not-run');
+  assert.deepEqual(snapshot.changes[1].tests, []);
+  assert.equal(snapshot.changes[1].lifecycle.state, 'committed');
+  assert.equal(snapshot.capabilities[0].confidence, 'low');
+  assert.equal(await readFile(path.join(root, original.relativePath), 'utf8'), before);
+
+  const app = await createWebServer(root);
+  t.after(() => app.close());
+  const response = await app.inject('/api/atlas');
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.json().totals.changes, 2);
+  assert.equal(response.headers['cache-control'], 'no-store');
+  assert.equal((await app.inject('/api/changes/' + original.record.id)).json().id, original.record.id);
+  assert.equal((await app.inject('/api/changes/missing')).statusCode, 404);
+  assert.equal((await app.inject({ method: 'POST', url: '/api/atlas', payload: {} })).statusCode, 404);
+  assert.equal((await app.inject({ url: '/api/atlas', headers: { host: 'evil.invalid' } })).statusCode, 403);
+  assert.equal((await app.inject({ url: '/api/atlas', headers: { origin: 'https://evil.invalid' } })).statusCode, 403);
+  assert.equal((await app.inject('/api/atlas')).headers['access-control-allow-origin'], undefined);
+  await writeFile(path.join(root, original.relativePath), JSON.stringify({ schemaVersion: 1, id: original.record.id }));
+  const invalid = await app.inject('/api/atlas');
+  assert.equal(invalid.statusCode, 500);
+  assert.equal(invalid.json().code, 'FACTS_INVALID');
+  assert.equal(invalid.json().totals, undefined);
+});
+
+test('Web projection distinguishes invalid Git roots from empty projects', async t => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'domainatlas-web-invalid-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const app = await createWebServer(root);
+  t.after(() => app.close());
+  const response = await app.inject('/api/atlas');
+  assert.equal(response.statusCode, 500);
+  assert.equal(response.json().code, 'GIT_READ_FAILED');
+});

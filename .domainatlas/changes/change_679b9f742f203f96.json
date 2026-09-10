@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "change_679b9f742f203f96",
+  "kind": "change",
+  "recordedAt": "2026-09-09T09:49:20.242Z",
+  "request": "创建 `docs/hook-acceptance.md`，写入“DomainAtlas 自动记录验收”。只创建这个文件，不提交 Git，不手动调用 ingest-codex 或 codex-hook。",
+  "summary": "已创建 [docs/hook-acceptance.md](/Users/woodynew/mydata/project/codex/DomainAtlas/docs/hook-acceptance.md)，内容为：\n\n> DomainAtlas 自动记录验收\n\n未提交 Git，未手动调用 `ingest-codex` 或 `codex-hook`。",
+  "source": {
+    "host": "codex",
+    "taskId": "01a08591-d932-7173-91fb-3d0b5cfdb0aa/01a08591-e506-7323-a8b2-e87de382297c"
+  },
+  "changedFiles": [
+    "docs/hook-acceptance.md"
+  ],
+  "fileChanges": [
+    {
+      "path": "docs/hook-acceptance.md",
+      "before": null,
+      "after": {
+        "oid": "9a893c465246c12562cf88bef2f72e164bf01731",
+        "mode": "100644"
+      }
+    }
+  ],
+  "affectedCapabilityIds": [],
+  "tests": [],
+  "evidence": [
+    {
+      "kind": "requirement",
+      "value": "创建 `docs/hook-acceptance.md`，写入“DomainAtlas 自动记录验收”。只创建这个文件，不提交 Git，不手动调用 ingest-codex 或 codex-hook。"
+    },
+    {
+      "kind": "changed-file",
+      "value": "docs/hook-acceptance.md"
+    },
+    {
+      "kind": "code-graph",
+      "value": "codebase-memory-mcp"
+    }
+  ]
+}

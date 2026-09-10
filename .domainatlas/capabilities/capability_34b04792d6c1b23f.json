@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "capability_34b04792d6c1b23f",
+  "domainId": "domain_4b5174ed2e5d220f",
+  "name": "codex hooks",
+  "confidence": "medium",
+  "evidence": [
+    {
+      "source": "codebase-memory-mcp",
+      "reference": "src/adapters/codex-hooks.ts",
+      "confidence": "medium"
+    }
+  ]
+}

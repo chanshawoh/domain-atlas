@@ -4,7 +4,41 @@
 
 ## 运行方式
 
-先执行 `pnpm build`。仓库已提供 `.codex/hooks.json`，其命令从 Git 根目录定位 `dist/src/cli.js`，因此支持从子目录启动 Codex。
+先执行 `pnpm build`。仓库已提供 `.codex/hooks.json`，其命令从 Git 根目录定位 `dist/src/cli.js`，因此支持从子目录启动 Codex。当前配置使用 `codex-hook --global` 的初始化检查；全局安装方法见下节。
+
+## 全局安装：已初始化项目自动记录
+
+在 DomainAtlas 工具仓库构建后运行：
+
+```sh
+pnpm domainatlas init -g --codex
+```
+
+命令形式参考 [RTK 的 `init -g --codex`](https://github.com/rtk-ai/rtk)，`-g` / `--global` 指定用户级范围，`--codex` 指定宿主。执行即安装，**无需 `--write`**；预览用 `pnpm domainatlas init -g --codex --dry-run`，帮助用 `pnpm domainatlas init --help`。普通 `pnpm domainatlas init` 仍只初始化当前项目。全局安装不会顺带初始化当前项目，也不要求从 Git 仓库执行。
+
+配置目标优先 `$CODEX_HOME/hooks.json`，未设置时使用 `~/.codex/hooks.json`。可用 `--codex-home PATH` 指定其他 Codex 配置目录。安装器合并 `UserPromptSubmit` / `Stop`，保留其他钩子和配置，修改前备份原文件；重复安装不新增副本。输出中包含目标文件与备份路径。它不修改 Codex 信任状态，也不安装全局 npm 包。
+
+命令固定为当前 Node 可执行文件与 DomainAtlas `dist/src/cli.js` 的绝对路径。目标项目无需复制 CLI 或 `.codex/hooks.json`，从子目录启动也会解析到目标 Git 根目录。工具仓库移动或 Node 版本路径删除后，需要重新构建并安装；当前实现生成 POSIX shell 命令，适用于 macOS/Linux。
+
+安装后在 Codex CLI `/hooks` 审阅并信任新的全局命令，再开启一轮新任务。生效条件：
+
+- **已初始化项目**：根目录存在有效 `.domainatlas/config.json`（`schemaVersion: 1`、`storage: "immutable-json-files"`），每轮自动保存开始快照并在结束时记录，**不需要提示词前缀或每轮调用技能**。
+- **未初始化项目或非 Git 目录**：静默返回 `{}`，不创建事实目录或任务缓存，也不自动初始化。只有明确要求初始化时才运行目标项目的 `init`。
+- **本轮中途初始化**：本轮没有开始快照，跳过本轮结束记录，从下一轮开始。
+- **配置损坏或版本不支持**：不覆盖配置、不创建快照，开始事件返回跳过原因。
+- **重复投递**：session/turn 稳定 ID 去重；两个使用 `--global` 的全局/本地钩子共享规则。已启用的旧版不带 `--global` 的本地钩子仍会独立执行，不能被全局配置覆盖，需单独更新或禁用。
+
+`skills/domainatlas` 继续仅显式调用。技能用于查看、管理和手动操作；自动记录由 Hooks 完成，两者互不替代。
+
+卸载安装器管理的全局钩子：
+
+```sh
+pnpm domainatlas init -g --codex --uninstall
+```
+
+卸载也可叠加 `--dry-run` 预览。卸载保留其他钩子、现有业务事实及项目本地钩子。仅安装全局钩子不等于启用 Git pre-commit，也不会自动暂存或提交记录。
+
+## 生命周期协议
 
 在 Codex CLI 中打开 `/hooks`，审阅并信任本项目的 `UserPromptSubmit` 与 `Stop` 命令。官方文档说明：新的或发生变化的非托管钩子在完成信任之前会被跳过；项目 `.codex/` 配置层也需受信任。未修改用户级配置，也未写入或绕过 Codex 的信任状态。
 
@@ -15,7 +49,7 @@
 
 快照读取 Git 文件元数据，仅对有差异和未忽略的未跟踪文件计算 Git blob ID；不将源码传入模型。开始时已经存在且本轮未改变的修改不会计入本轮。重命名表示为删除旧路径和新增路径；文件模式、软链接、删除和特殊字符路径均有覆盖。
 
-缺少开始快照时，钩子返回明确提示并跳过推断。缺少必要字段或发生 Provider 错误时返回失败。没有文件变化的问答仍可记录需求和回复，但不自动暂存。测试结果默认为空；回复中的“测试通过”不是结构化执行证据。显式 `ingest-codex` 继续支持测试结果录入。
+缺少开始快照时，不带 `--global` 的旧入口返回明确提示，`--global` 入口静默跳过；均不补造推断。缺少必要字段或发生 Provider 错误时返回失败。没有文件变化的问答仍可记录需求和回复，但不自动暂存。测试结果默认为空；回复中的“测试通过”不是结构化执行证据。显式 `ingest-codex` 继续支持测试结果录入。
 
 ## Git pre-commit
 

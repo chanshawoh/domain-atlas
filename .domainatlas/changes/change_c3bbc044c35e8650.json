@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "id": "change_c3bbc044c35e8650",
+  "kind": "change",
+  "recordedAt": "2026-09-10T09:34:23.227Z",
+  "request": "创建当前项目的 skills/ ，写入 什么时候使用，如何使用，未初始化的情况下不要自动使用 ，只有当用户明确使用 DomainAtlas 的时候才使用",
+  "summary": "已创建 [skills/domainatlas/SKILL.md](/Users/woodynew/mydata/project/codex/DomainAtlas/skills/domainatlas/SKILL.md)，包含使用时机、初始化检查和操作示例。\n\n已明确限制：\n\n- 仅用户明确要求使用 DomainAtlas 时调用。\n- 未初始化则停止，不自动初始化；仅明确要求初始化时执行。\n- 已初始化也不自动触发。\n- 不自动启用 Hooks、修改 MCP 或暂存记录。\n\n[调用策略配置](/Users/woodynew/mydata/project/codex/DomainAtlas/skills/domainatlas/agents/openai.yaml) 已设置 `allow_implicit_invocation: false`，技能格式和配置校验通过。\n\n此限制作用于技能调用，已有 Hooks 的运行行为不会因此改变。",
+  "source": {
+    "host": "codex",
+    "taskId": "01a08574-bf71-7c02-8e91-bce2ad7eb514/01a08aa9-26ae-7e32-b7e1-671c4fa67f6c"
+  },
+  "changedFiles": [
+    "skills/domainatlas/SKILL.md",
+    "skills/domainatlas/agents/openai.yaml"
+  ],
+  "fileChanges": [
+    {
+      "path": "skills/domainatlas/SKILL.md",
+      "before": null,
+      "after": {
+        "oid": "1cfc8159724cf89f74aa377ed4935de1bde84941",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "skills/domainatlas/agents/openai.yaml",
+      "before": null,
+      "after": {
+        "oid": "5b1f887a9138416870f64ba2fe21602e4a59cfa7",
+        "mode": "100644"
+      }
+    }
+  ],
+  "affectedCapabilityIds": [],
+  "tests": [],
+  "evidence": [
+    {
+      "kind": "requirement",
+      "value": "创建当前项目的 skills/ ，写入 什么时候使用，如何使用，未初始化的情况下不要自动使用 ，只有当用户明确使用 DomainAtlas 的时候才使用"
+    },
+    {
+      "kind": "changed-file",
+      "value": "skills/domainatlas/SKILL.md"
+    },
+    {
+      "kind": "changed-file",
+      "value": "skills/domainatlas/agents/openai.yaml"
+    },
+    {
+      "kind": "code-graph",
+      "value": "codebase-memory-mcp"
+    }
+  ]
+}

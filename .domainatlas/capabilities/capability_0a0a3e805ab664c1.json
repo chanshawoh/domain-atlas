@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "capability_0a0a3e805ab664c1",
+  "domainId": "domain_4b5e57f6eb2f42b9",
+  "name": "App",
+  "confidence": "medium",
+  "evidence": [
+    {
+      "source": "codebase-memory-mcp",
+      "reference": "Users-woodynew-mydata-project-codex-DomainAtlas.apps.web.src.App.App",
+      "confidence": "medium"
+    }
+  ]
+}

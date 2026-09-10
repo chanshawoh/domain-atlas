@@ -1,5 +1,11 @@
 # 开发状态
 
+## Web UI 首版（2026-09-10）
+
+已依据用户提供的 Figma Make 预览实现本地只读 Web 工作台，参考 JourneyStage 的 React 19 / Vite 7 / Tailwind 4 / Fastify 5 技术栈。新增 `apps/web`、`src/web` 查询投影与 API、`domainatlas ui` 入口，读取当前 Git 项目的真实 `.domainatlas` 事实，支持域/能力地图与列表、记录筛选、证据详情及纠正历史关联。启动：`pnpm build && pnpm ui`，默认地址 `http://127.0.0.1:4310`；热更新另运行 `pnpm dev:web`。
+
+验证：`pnpm test` 构建通过，20 个测试通过、1 个真实图谱用例按默认配置跳过；浏览器核验真实数据、能力筛选、列表切换、历史跳转、原始 JSON 与无结果状态。首版全量加载事实、浏览器分页，未针对大型记录库优化；没有 Web 写操作、数据库投影、MCP 传输或自动测试采集。Figma 资源读取限制、运行说明与详细范围见 [Web UI 开发记录](docs/web-ui-development.md)。本次改动未暂存、未提交、未推送。以下保留此前开发时点的记录。
+
 ## 当前进展（2026-09-09 继续开发）
 
 已完成文档所列下一阶段的本地实现：Codex 任务开始/结束记录、完整 staged diff 匹配、可选 pre-commit 选择性暂存、Provider 预算控制和纠正引用校验。保留了开发前已有的文档修改，原检查记录见下节。

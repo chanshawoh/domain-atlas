@@ -3,6 +3,8 @@ import type { BusinessDiscovery, CodeGraphBudget, CodeGraphProvider } from "../c
 import { createChangeId, type ChangeEvidence, type ChangeRecord } from "./model.js";
 import type { DomainModelStore, StoredChange } from "./ports.js";
 import { limitDiscovery } from "../code-graph/budget.js";
+import { readDevelopmentIdentity } from "../git/git-identity.js";
+import { extractRequirementParties } from "./requirement-parties.js";
 
 export interface RecordedChange extends StoredChange {
   discovery: BusinessDiscovery;
@@ -56,6 +58,9 @@ export class ChangeRecorder {
     }
 
     const changedFiles = [...new Set(event.changedFiles.filter(Boolean))].sort();
+    const developmentIdentity = event.developmentIdentity === undefined
+      ? await readDevelopmentIdentity(this.options.projectRoot, "ingest")
+      : event.developmentIdentity;
     const discovery = limitDiscovery(await this.options.codeGraphProvider.discover({
       projectRoot: this.options.projectRoot,
       request,
@@ -84,6 +89,7 @@ export class ChangeRecorder {
       },
       changedFiles,
       ...(event.fileChanges ? { fileChanges: event.fileChanges } : {}),
+      attribution: { developmentIdentity, ...extractRequirementParties(request) },
       affectedCapabilityIds: discovery.capabilities.map((capability) => capability.id).sort(),
       tests: event.tests ?? [],
       evidence,

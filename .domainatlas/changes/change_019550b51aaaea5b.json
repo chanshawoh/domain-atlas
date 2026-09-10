@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "change_019550b51aaaea5b",
+  "kind": "change",
+  "recordedAt": "2026-09-10T09:27:48.928Z",
+  "request": "先停掉吧",
+  "summary": "已停止 Web UI 服务，4310 端口已释放。代码改动保留。",
+  "source": {
+    "host": "codex",
+    "taskId": "01a08a7d-9607-7442-9da7-cb90782eb3c3/01a08aa4-a463-7e70-81f3-63ba7e9b10a9"
+  },
+  "changedFiles": [],
+  "fileChanges": [],
+  "affectedCapabilityIds": [],
+  "tests": [],
+  "evidence": [
+    {
+      "kind": "requirement",
+      "value": "先停掉吧"
+    },
+    {
+      "kind": "code-graph",
+      "value": "codebase-memory-mcp"
+    }
+  ]
+}

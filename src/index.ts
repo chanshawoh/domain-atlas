@@ -9,5 +9,7 @@ export * from "./core/change-recorder.js";
 export * from "./core/model.js";
 export * from "./core/ports.js";
 export * from "./git/git-observer.js";
+export * from "./git/git-identity.js";
+export * from "./core/requirement-parties.js";
 export * from "./runtime.js";
 export * from "./storage/file-domain-model-store.js";

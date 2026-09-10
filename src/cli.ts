@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 import process from "node:process";
+import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
 import type { ChangeKind, TestStatus } from "./core/model.js";
 import { GitObserver } from "./git/git-observer.js";
 import { createDomainAtlasRuntime } from "./runtime.js";
 import { handleCodexHook } from "./adapters/codex-hooks.js";
 import { stageMatchingRecords } from "./git/stage-records.js";
+import { configureCodexHooks } from "./adapters/codex-hook-install.js";
 
 function values(args: string[], flag: string): string[] {
   const result: string[] = [];
@@ -33,22 +36,86 @@ function usage(): string {
   return [
     "Usage:",
     "  domainatlas init",
+    "  domainatlas init -g --codex [--dry-run] [--uninstall] [--codex-home PATH]",
     "  domainatlas ingest-codex --request TEXT --summary TEXT [--task-id ID] [--kind KIND --supersedes ID] [--changed-file PATH]... [--test-command COMMAND --test-status STATUS]",
     "  domainatlas list",
-    "  domainatlas codex-hook  (reads one Codex hook JSON object from stdin)",
+    "  domainatlas ui [--port 4310]  (read-only local Web UI)",
+    "  domainatlas codex-hook [--global]  (reads one Codex hook JSON object from stdin)",
     "  domainatlas stage-records [--write]  (preview by default)",
+  ].join("\n");
+}
+
+function initUsage(): string {
+  return [
+    "Usage: domainatlas init [OPTIONS]",
+    "",
+    "Without options, initialize .domainatlas in the current project.",
+    "With -g --codex, install user-level Codex hooks without initializing the current project.",
+    "",
+    "  -g, --global       Configure user-level hooks (requires --codex)",
+    "      --codex        Target Codex (requires --global)",
+    "      --dry-run      Preview global hook changes without writing files",
+    "      --uninstall    Remove DomainAtlas global hooks, preserving other hooks and facts",
+    "      --codex-home PATH  Override CODEX_HOME (default: ~/.codex when unset)",
+    "  -h, --help         Show this help",
+    "",
+    "Examples:",
+    "  domainatlas init",
+    "  domainatlas init -g --codex",
+    "  domainatlas init -g --codex --dry-run",
+    "  domainatlas init -g --codex --uninstall",
   ].join("\n");
 }
 
 async function main(): Promise<void> {
   const [command, ...args] = process.argv.slice(2);
+  if (command === "--help" || command === "-h") {
+    process.stdout.write(usage() + "\n");
+    return;
+  }
+  if (command === "init") {
+    const { values: options } = parseArgs({ args, allowPositionals: false, options: {
+      global: { type: "boolean", short: "g" },
+      codex: { type: "boolean" },
+      "dry-run": { type: "boolean" },
+      uninstall: { type: "boolean" },
+      "codex-home": { type: "string" },
+      help: { type: "boolean", short: "h" },
+    } });
+    if (options.help) {
+      process.stdout.write(initUsage() + "\n");
+      return;
+    }
+    if (args.length) {
+      if (!options.global || !options.codex) {
+        throw new Error("Global hook options require both --global (-g) and --codex. Use domainatlas init --help.");
+      }
+      if (options["codex-home"] !== undefined && !options["codex-home"].trim()) throw new Error("--codex-home must not be empty");
+      const result = await configureCodexHooks({ cliPath: fileURLToPath(import.meta.url),
+        codexHome: options["codex-home"], write: !options["dry-run"], remove: options.uninstall });
+      process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+      return;
+    }
+    await createDomainAtlasRuntime(process.cwd()).store.initialize();
+    process.stdout.write("Initialized .domainatlas in " + process.cwd() + "\n");
+    return;
+  }
+  if (command === "ui") {
+    if (args.length && (args.length !== 2 || args[0] !== "--port")) throw new Error("Usage: domainatlas ui [--port 4310]");
+    const port = Number(value(args, "--port") ?? 4310);
+    if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid --port");
+    const { startWebServer } = await import("./web/server.js");
+    await startWebServer(process.cwd(), port);
+    return;
+  }
   if (command === "codex-hook") {
+    if (args.length && (args.length !== 1 || args[0] !== "--global")) throw new Error("Usage: domainatlas codex-hook [--global]");
     let input = "";
     for await (const chunk of process.stdin) {
       input += chunk;
       if (Buffer.byteLength(input) > 1024 * 1024) throw new Error("Codex hook input exceeds 1 MiB");
     }
-    process.stdout.write(JSON.stringify(await handleCodexHook(JSON.parse(input))) + "\n");
+    process.stdout.write(JSON.stringify(await handleCodexHook(JSON.parse(input), undefined, args.includes("--global"))) + "\n");
     return;
   }
   if (command === "stage-records") {
@@ -58,12 +125,6 @@ async function main(): Promise<void> {
   }
   const projectRoot = process.cwd();
   const runtime = createDomainAtlasRuntime(projectRoot);
-
-  if (command === "init") {
-    await runtime.store.initialize();
-    process.stdout.write("Initialized .domainatlas in " + projectRoot + "\n");
-    return;
-  }
 
   if (command === "ingest-codex") {
     const testCommand = value(args, "--test-command");

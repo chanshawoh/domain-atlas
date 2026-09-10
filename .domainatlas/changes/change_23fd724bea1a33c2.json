@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "id": "change_23fd724bea1a33c2",
+  "kind": "change",
+  "recordedAt": "2026-09-10T06:43:02.263Z",
+  "request": "开始推进web ui 开发，你先把当前项目产品的功能点、特性等整理清楚，然后写一个生成整个页面的生图提示词，我拿去生成ui 界面图",
+  "summary": "已整理完成，新增了两份文档：\n\n- [产品功能与首版 UI 范围](/Users/woodynew/mydata/project/codex/DomainAtlas/docs/web-ui-product-brief.md)\n- **[完整页面生图提示词](/Users/woodynew/mydata/project/codex/DomainAtlas/docs/web-ui-image-prompt.md)**——直接复制其中整个代码块即可生成。\n\n产品定位明确为：**让每次 AI 开发，都留下可追溯的业务变化。**\n\n核心功能包括：\n\n| 功能 | 用户获得的价值 |\n|---|---|\n| 自动记录开发任务 | 保留原始需求、完成摘要和文件变化 |\n| 业务域 → 能力地图 | 理解已沉淀的业务结构 |\n| 变更时间线 | 查看能力如何逐步演进 |\n| 证据追溯 | 核对文件、任务来源和测试结果 |\n| 来源与置信度 | 区分图谱推导和低置信度推断 |\n| 追加纠正与撤销 | 保留原记录及历史关联 |\n| Git 提交状态 | 区分待提交记录与已提交记录 |\n\n首张图选用 **“业务地图工作台，展开变更详情”**：左侧导航，中央业务地图和最近变更，右侧需求、文件与证据面板。采用浅色专业工具风格，8:5 横向画布。\n\n提示词已经包含完整布局、中文文案、配色、选中状态和一致的示例数据，并明确标注“示例数据”。本次完成产品与设计准备，尚未编写前端代码。",
+  "source": {
+    "host": "codex",
+    "taskId": "01a08583-bdaf-7803-9e13-7e3c7e7d2e98/01a08a09-fdd6-7423-a8f9-17b91035491b"
+  },
+  "changedFiles": [
+    "docs/web-ui-image-prompt.md",
+    "docs/web-ui-product-brief.md"
+  ],
+  "fileChanges": [
+    {
+      "path": "docs/web-ui-image-prompt.md",
+      "before": null,
+      "after": {
+        "oid": "809e35dab6e2fccab4e6dce4c968b1dedfeb2fa6",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "docs/web-ui-product-brief.md",
+      "before": null,
+      "after": {
+        "oid": "6972e7d9bc3154e8424948525a4c7923473d0448",
+        "mode": "100644"
+      }
+    }
+  ],
+  "affectedCapabilityIds": [],
+  "tests": [],
+  "evidence": [
+    {
+      "kind": "requirement",
+      "value": "开始推进web ui 开发，你先把当前项目产品的功能点、特性等整理清楚，然后写一个生成整个页面的生图提示词，我拿去生成ui 界面图"
+    },
+    {
+      "kind": "changed-file",
+      "value": "docs/web-ui-image-prompt.md"
+    },
+    {
+      "kind": "changed-file",
+      "value": "docs/web-ui-product-brief.md"
+    },
+    {
+      "kind": "code-graph",
+      "value": "codebase-memory-mcp"
+    }
+  ]
+}

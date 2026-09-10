@@ -73,10 +73,14 @@ test("the first Codex task becomes pending immediately and committed after Git c
   assert.deepEqual(await observer.resolveRecordLifecycle(recorded.relativePath), {
     state: "committed",
     commitSha: head,
+    author: { name: "DomainAtlas Test", email: "domainatlas@example.invalid" },
+    committer: { name: "DomainAtlas Test", email: "domainatlas@example.invalid" },
   });
   assert.deepEqual(await observer.resolveRecordLifecycle(correction.relativePath), {
     state: "committed",
     commitSha: head,
+    author: { name: "DomainAtlas Test", email: "domainatlas@example.invalid" },
+    committer: { name: "DomainAtlas Test", email: "domainatlas@example.invalid" },
   });
 });
 

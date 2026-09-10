@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "change_7a7fa4258dfc82e4",
+  "kind": "change",
+  "recordedAt": "2026-09-10T09:29:52.872Z",
+  "request": "当前项目有记录是谁提交修改的代码吗，比如当前环境的 git 账号是 woody ，开发过程中我提到 clp 提过来或者 前端 提过来 某某需求， \"clp\" \"前端\" 会被记录下来吗",
+  "summary": "**目前会保留你提到的原话，但还没有把“代码提交者”和“需求提出者”分别记录成结构化字段。**我核对了当前代码和实际记录。\n\n| 信息 | 当前情况 |\n|---|---|\n| Git 提交者，例如 `woody` | Git 提交本身保存作者、提交者；DomainAtlas 目前只关联提交 SHA，没有采集姓名、邮箱 |\n| “clp 提过来某某需求” | Hook 正常完成记录时，这句话会保存在 `request` 和需求证据中，但不会自动提取 `clp` 为提出者 |\n| “前端提过来某某需求” | 同样保留原文，但不会识别“前端”为团队或角色 |\n| 记录来自哪里 | `source` 目前仅保存 `codex` 和任务 ID |\n\n例如你说：\n\n> clp 提了需求，前端反馈订单列表缺少手机号，请帮我修改。\n\n当前可以从记录原文中查到 **clp、前端及这段描述**，但还不能直接按“提出者 = clp”筛选或统计。这里只采集该轮输入，**不会自动把前几轮提到的人关联到后续修改**。\n\n对应实现：[记录模型](/Users/woodynew/mydata/project/codex/DomainAtlas/src/core/model.ts:54)、[对话采集](/Users/woodynew/mydata/project/codex/DomainAtlas/src/adapters/codex-hooks.ts:35)、[Git 关联](/Users/woodynew/mydata/project/codex/DomainAtlas/src/git/git-observer.ts:38)。\n\n如果要支持你描述的追溯方式，建议分别记录 **开发环境身份、实际 Git 作者/提交者、需求提出者、反馈方**，并保留识别依据的原话；“前端”只记作角色，不推断成某个具体人。",
+  "source": {
+    "host": "codex",
+    "taskId": "01a08aa4-bc3a-7c00-90b6-83d38a546ef7/01a08aa5-d49d-7912-8935-7e3ed797863c"
+  },
+  "changedFiles": [],
+  "fileChanges": [],
+  "affectedCapabilityIds": [],
+  "tests": [],
+  "evidence": [
+    {
+      "kind": "requirement",
+      "value": "当前项目有记录是谁提交修改的代码吗，比如当前环境的 git 账号是 woody ，开发过程中我提到 clp 提过来或者 前端 提过来 某某需求， \"clp\" \"前端\" 会被记录下来吗"
+    },
+    {
+      "kind": "code-graph",
+      "value": "codebase-memory-mcp"
+    }
+  ]
+}

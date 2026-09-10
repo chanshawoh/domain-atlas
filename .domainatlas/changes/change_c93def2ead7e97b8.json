@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 1,
+  "id": "change_c93def2ead7e97b8",
+  "kind": "change",
+  "recordedAt": "2026-09-10T09:05:29.872Z",
+  "request": "# Files pasted by the user:\n\n## \"Create ONE polished complete in-game interface concept screenshot for a Chinese…\": /Users/woodynew/.codex/attachments/749bbe73-7948-4fb4-93d4-ccac7dc3d722/pasted-text.txt\n\n## My request:\n开始进入web ui 开发阶段，用figma设计好的UI&#x20;\n技术栈参考：/Users/woodynew/mydata/project/github/woodynewv/journey-stage",
+  "summary": "已按 Figma 设计预览落地首版 Web UI，并启动了[本地预览](http://127.0.0.1:4310)。\n\n- 参考 JourneyStage：React 19、Vite 7、Tailwind 4、Fastify 5。\n- 已接入真实数据，支持业务地图、记录筛选、证据详情和历史追溯。\n- 构建通过；20 项测试通过，1 项跳过；桌面与窄屏交互已验证。\n\n后续运行 `pnpm ui`，前端开发运行 `pnpm dev:web`。本次未提交、未推送；详见[开发记录](/Users/woodynew/mydata/project/codex/DomainAtlas/docs/web-ui-development.md)。",
+  "source": {
+    "host": "codex",
+    "taskId": "01a08a7d-9607-7442-9da7-cb90782eb3c3/01a08a7f-378d-7d41-a113-e4a3565886b3"
+  },
+  "changedFiles": [
+    "DEV_STATE.md",
+    "README.md",
+    "apps/web/index.html",
+    "apps/web/package.json",
+    "apps/web/public/domainatlas.svg",
+    "apps/web/src/App.tsx",
+    "apps/web/src/main.tsx",
+    "apps/web/src/styles.css",
+    "apps/web/tsconfig.json",
+    "apps/web/vite.config.ts",
+    "docs/web-ui-development.md",
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "src/cli.ts",
+    "src/web/contracts.ts",
+    "src/web/query.ts",
+    "src/web/server.ts",
+    "tests/web-query.test.ts"
+  ],
+  "fileChanges": [
+    {
+      "path": "DEV_STATE.md",
+      "before": {
+        "oid": "6f17203a4d9b62b265caec79271908d654d6268a",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "e549dd00686c7b4b33c80226e2bbe0e1e43acab1",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "README.md",
+      "before": {
+        "oid": "a1a604b424a8615d7d1852f30abb5be2c366757e",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "600bec05fa71deff5ad1d66d3ad3798172d34559",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "apps/web/index.html",
+      "before": null,
+      "after": {
+        "oid": "10b32c7ee30b000bcef5f70c2d00df9da64eec35",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "apps/web/package.json",
+      "before": null,
+      "after": {
+        "oid": "48528e4aff95a7e29c84f6da7e073480ee9f43b4",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "apps/web/public/domainatlas.svg",
+      "before": null,
+      "after": {
+        "oid": "173e224ec2fa53216109b2268c11555da05aedd7",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "apps/web/src/App.tsx",
+      "before": null,
+      "after": {
+        "oid": "fd2b341661552f39f7c8fd62aee484f52680a4a2",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "apps/web/src/main.tsx",
+      "before": null,
+      "after": {
+        "oid": "93456442f7c409bc3dc0785b10ad128b85a6ec1a",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "apps/web/src/styles.css",
+      "before": null,
+      "after": {
+        "oid": "55f38ab2e7126ebef482c63e3f973cf833b38145",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "apps/web/tsconfig.json",
+      "before": null,
+      "after": {
+        "oid": "af43db50e594ff91b60a8cb0c2efe33a87cc4a6c",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "apps/web/vite.config.ts",
+      "before": null,
+      "after": {
+        "oid": "72c4208d730f26f026bfe5a7c23b0d6a2965c635",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "docs/web-ui-development.md",
+      "before": null,
+      "after": {
+        "oid": "0e545a47985b7bce98dc753b2565ba60843e5231",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "package.json",
+      "before": {
+        "oid": "e082b162560a73a346cf496358c2113bf0647050",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "9eb3e633c3c08ccd0234e5a7eef67ebfacf1ec87",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "before": {
+        "oid": "8072b3ad69d0179c1840893c926f341097576cef",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "3cd8f584ca2e4a4b72f52cb9ccc6e25faf9aba96",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "before": null,
+      "after": {
+        "oid": "313f2ecc17579b19b13a962b523345cb46dfa138",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/cli.ts",
+      "before": {
+        "oid": "0f20b60f1faa35dee9c0cb05b10840b2da0fbc0f",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "ea4554047f1cfb363c5bb7205656a7d1562b8514",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/web/contracts.ts",
+      "before": null,
+      "after": {
+        "oid": "937207fc2c87582845f5ec6955d46a6b8dd189e6",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/web/query.ts",
+      "before": null,
+      "after": {
+        "oid": "7932ffa5a67b4462511e029a23780466df9702bd",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/web/server.ts",
+      "before": null,
+      "after": {
+        "oid": "09051eb6232fa4572873b3e0a52cd75ef89f1cd1",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "tests/web-query.test.ts",
+      "before": null,
+      "after": {
+        "oid": "e71288d0fe7c4bf44cf47ee3ee69d69d4b3cbfc4",
+        "mode": "100644"
+      }
+    }
+  ],
+  "affectedCapabilityIds": [],
+  "tests": [],
+  "evidence": [
+    {
+      "kind": "requirement",
+      "value": "# Files pasted by the user:\n\n## \"Create ONE polished complete in-game interface concept screenshot for a Chinese…\": /Users/woodynew/.codex/attachments/749bbe73-7948-4fb4-93d4-ccac7dc3d722/pasted-text.txt\n\n## My request:\n开始进入web ui 开发阶段，用figma设计好的UI&#x20;\n技术栈参考：/Users/woodynew/mydata/project/github/woodynewv/journey-stage"
+    },
+    {
+      "kind": "changed-file",
+      "value": "DEV_STATE.md"
+    },
+    {
+      "kind": "changed-file",
+      "value": "README.md"
+    },
+    {
+      "kind": "changed-file",
+      "value": "apps/web/index.html"
+    },
+    {
+      "kind": "changed-file",
+      "value": "apps/web/package.json"
+    },
+    {
+      "kind": "changed-file",
+      "value": "apps/web/public/domainatlas.svg"
+    },
+    {
+      "kind": "changed-file",
+      "value": "apps/web/src/App.tsx"
+    },
+    {
+      "kind": "changed-file",
+      "value": "apps/web/src/main.tsx"
+    },
+    {
+      "kind": "changed-file",
+      "value": "apps/web/src/styles.css"
+    },
+    {
+      "kind": "changed-file",
+      "value": "apps/web/tsconfig.json"
+    },
+    {
+      "kind": "changed-file",
+      "value": "apps/web/vite.config.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "docs/web-ui-development.md"
+    },
+    {
+      "kind": "changed-file",
+      "value": "package.json"
+    },
+    {
+      "kind": "changed-file",
+      "value": "pnpm-lock.yaml"
+    },
+    {
+      "kind": "changed-file",
+      "value": "pnpm-workspace.yaml"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/cli.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/web/contracts.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/web/query.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/web/server.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "tests/web-query.test.ts"
+    },
+    {
+      "kind": "code-graph",
+      "value": "codebase-memory-mcp"
+    }
+  ]
+}

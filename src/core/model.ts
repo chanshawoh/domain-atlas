@@ -51,6 +51,33 @@ export interface FileChange {
   after: FileVersion | null;
 }
 
+export interface GitIdentity {
+  name: string;
+  email: string;
+}
+
+export interface DevelopmentIdentity {
+  name?: string;
+  email?: string;
+  source: "git-config";
+  capturedAt: string;
+  capturePoint: "turn-start" | "ingest";
+}
+
+export interface RequirementParty {
+  name: string;
+  kind: "alias" | "role" | "team";
+  source: "request";
+  evidence: string;
+  confidence: "medium";
+}
+
+export interface ChangeAttribution {
+  developmentIdentity: DevelopmentIdentity | null;
+  requestedBy: RequirementParty[];
+  feedbackBy: RequirementParty[];
+}
+
 export interface ChangeRecord {
   schemaVersion: 1;
   id: string;
@@ -63,6 +90,7 @@ export interface ChangeRecord {
     taskId?: string;
   };
   changedFiles: string[];
+  attribution?: ChangeAttribution;
   fileChanges?: FileChange[];
   affectedCapabilityIds: string[];
   tests: TestResult[];

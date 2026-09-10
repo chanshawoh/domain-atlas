@@ -4,10 +4,14 @@ import { createStableId } from "../core/model.js";
 import type { CodeGraphProvider } from "../code-graph/provider.js";
 import { git, gitRoot, snapshotChanges, worktreeSnapshot, type GitSnapshot } from "../git/git-snapshot.js";
 import { createDomainAtlasRuntime } from "../runtime.js";
+import type { DevelopmentIdentity } from "../core/model.js";
+import { readDevelopmentIdentity } from "../git/git-identity.js";
 
 interface TurnStart {
   request: string;
   snapshot: GitSnapshot;
+  developmentIdentity?: DevelopmentIdentity | null;
+  global?: boolean;
 }
 
 function requiredString(input: Record<string, unknown>, field: string): string {
@@ -21,11 +25,32 @@ function requiredString(input: Record<string, unknown>, field: string): string {
 export async function handleCodexHook(
   input: unknown,
   primaryProvider?: CodeGraphProvider | null,
+  global = false,
 ): Promise<{ systemMessage?: string }> {
   if (!input || typeof input !== "object") throw new Error("Expected a Codex hook JSON object");
   const event = input as Record<string, unknown>;
   if (event.hook_event_name !== "UserPromptSubmit" && event.hook_event_name !== "Stop") return {};
-  const root = await gitRoot(requiredString(event, "cwd"));
+  // Project initialization opts into automatic recording. Unrelated repositories
+  // are skipped before creating snapshots, a runtime, or fact files.
+  const root = await gitRoot(requiredString(event, "cwd")).catch((error) => {
+    if (global && /not a git repository/i.test(String(error.message))) return null;
+    throw error;
+  });
+  if (!root) return {};
+  if (global) {
+    const configText = await readFile(path.join(root, ".domainatlas/config.json"), "utf8").catch((error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    });
+    if (configText === null) return {};
+    try {
+      const config = JSON.parse(configText);
+      if (config?.schemaVersion !== 1 || config?.storage !== "immutable-json-files") throw new Error("unsupported config");
+    } catch {
+      return event.hook_event_name === "UserPromptSubmit"
+        ? { systemMessage: "DomainAtlas: invalid or unsupported .domainatlas/config.json; recording skipped." } : {};
+    }
+  }
   const sessionId = requiredString(event, "session_id");
   const turnId = requiredString(event, "turn_id");
   const id = createStableId("change", ["codex-hook", sessionId, turnId]);
@@ -35,25 +60,28 @@ export async function handleCodexHook(
   if (event.hook_event_name === "UserPromptSubmit") {
     const request = requiredString(event, "prompt");
     const snapshot = await worktreeSnapshot(root);
+    const developmentIdentity = await readDevelopmentIdentity(root, "turn-start");
     await mkdir(stateRoot, { recursive: true });
-    await writeFile(stateFile, JSON.stringify({ request, snapshot }), { flag: "wx" }).catch((error: NodeJS.ErrnoException) => {
+    await writeFile(stateFile, JSON.stringify({ request, snapshot, developmentIdentity, ...(global ? { global: true } : {}) }), { flag: "wx" }).catch((error: NodeJS.ErrnoException) => {
       if (error.code !== "EEXIST") throw error;
     });
     return {};
   }
-  if ((await runtime.store.listChanges()).some((change) => change.record.id === id)) return {};
   const start = await readFile(stateFile, "utf8").catch((error: NodeJS.ErrnoException) => {
     if (error.code === "ENOENT") return null;
     throw error;
   });
-  if (!start) return { systemMessage: "DomainAtlas: missing turn-start snapshot; no change record was inferred." };
-  const summary = requiredString(event, "last_assistant_message");
+  if (!start) return global ? {} : { systemMessage: "DomainAtlas: missing turn-start snapshot; no change record was inferred." };
   const baseline = JSON.parse(start) as TurnStart;
+  if (global && baseline.global !== true) return {};
+  if ((await runtime.store.listChanges()).some((change) => change.record.id === id)) return {};
+  const summary = requiredString(event, "last_assistant_message");
   const fileChanges = snapshotChanges(baseline.snapshot, await worktreeSnapshot(root));
   try {
     await runtime.adapter.handleTaskCompleted({
       taskId: sessionId + "/" + turnId,
       request: baseline.request,
+      developmentIdentity: baseline.developmentIdentity ?? null,
       summary,
       changedFiles: fileChanges.map((change) => change.path),
       fileChanges,

@@ -1,12 +1,13 @@
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
+import type { GitIdentity } from "../core/model.js";
 
 const execFileAsync = promisify(execFile);
 
 export type RecordLifecycle =
   | { state: "pending" }
-  | { state: "committed"; commitSha: string };
+  | { state: "committed"; commitSha: string; author: GitIdentity; committer: GitIdentity };
 
 function assertRelativeRecordPath(relativePath: string): void {
   if (path.isAbsolute(relativePath) || relativePath.split(/[\\/]+/).includes("..")) {
@@ -41,8 +42,16 @@ export class GitObserver {
       { cwd: this.projectRoot },
     );
     const firstCommit = stdout.trim().split(/\r?\n/).filter(Boolean)[0];
-    return firstCommit
-      ? { state: "committed", commitSha: firstCommit }
-      : { state: "pending" };
+    if (!firstCommit) return { state: "pending" };
+    const { stdout: identities } = await execFileAsync(
+      "git", ["show", "-s", "--format=%an%x00%ae%x00%cn%x00%ce", firstCommit],
+      { cwd: this.projectRoot },
+    );
+    const [authorName, authorEmail, committerName, committerEmail] = identities.trimEnd().split("\0");
+    return {
+      state: "committed", commitSha: firstCommit,
+      author: { name: authorName, email: authorEmail },
+      committer: { name: committerName, email: committerEmail },
+    };
   }
 }

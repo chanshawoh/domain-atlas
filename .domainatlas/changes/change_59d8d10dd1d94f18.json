@@ -1,0 +1,327 @@
+{
+  "schemaVersion": 1,
+  "id": "change_59d8d10dd1d94f18",
+  "kind": "change",
+  "recordedAt": "2026-09-10T09:42:39.598Z",
+  "request": "能不能支持全局安装 codex 钩子，这样不管在哪个项目下使用，只有使用 DomainAtlas 就可以统一生效了",
+  "summary": "已改为你说的规则：\n\n- **已初始化项目**：每轮自动记录，无需前缀。\n- **未初始化项目**：静默跳过，不自动初始化。\n- 技能仍仅显式调用，自动记录由 Hooks 独立完成。\n\n全局安装功能已实现，在当前项目执行一次：\n\n```sh\nrtk pnpm domainatlas install-codex-hooks --write\n```\n\n随后按 [Codex 官方要求](https://developers.openai.com/codex/hooks)，在 `/hooks` 审阅并信任即可。\n\n验证结果：31 项测试通过，1 项可选集成测试跳过。本次已完成安装预览，尚未写入用户全局配置。",
+  "source": {
+    "host": "codex",
+    "taskId": "01a08574-bf71-7c02-8e91-bce2ad7eb514/01a08aab-2083-7ff3-b1b2-e340c1d3bde0"
+  },
+  "changedFiles": [
+    ".codex/hooks.json",
+    "README.md",
+    "apps/web/src/App.tsx",
+    "docs/codex-integration.md",
+    "skills/domainatlas/SKILL.md",
+    "src/adapters/codex-hook-install.ts",
+    "src/adapters/codex-hooks.ts",
+    "src/adapters/codex.ts",
+    "src/cli.ts",
+    "src/core/change-recorder.ts",
+    "src/core/model.ts",
+    "src/core/requirement-parties.ts",
+    "src/git/git-identity.ts",
+    "src/git/git-observer.ts",
+    "src/index.ts",
+    "src/web/query.ts",
+    "tests/attribution.test.ts",
+    "tests/codex-global-hooks.test.ts",
+    "tests/first-task.e2e.test.ts"
+  ],
+  "fileChanges": [
+    {
+      "path": ".codex/hooks.json",
+      "before": {
+        "oid": "beabb6291424d906a946703ad5b9f8843b216e5e",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "3f1d272d3ad6739194a25b31f0bb61186943f77e",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "README.md",
+      "before": {
+        "oid": "600bec05fa71deff5ad1d66d3ad3798172d34559",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "cb84ad4234bc08072ba04da1f8f54a347aae899c",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "apps/web/src/App.tsx",
+      "before": {
+        "oid": "fd2b341661552f39f7c8fd62aee484f52680a4a2",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "de92a8b3dde21900592b95479336be284e0f9a26",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "docs/codex-integration.md",
+      "before": {
+        "oid": "faa6a628b2643de6545de33f61f8eaa934ec4d8a",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "5658c42b2a8d1ddd6787861d5743552cc5f71d12",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "skills/domainatlas/SKILL.md",
+      "before": {
+        "oid": "1cfc8159724cf89f74aa377ed4935de1bde84941",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "b313670031655ff5445bb7ff0e5c7aedb8efd304",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/adapters/codex-hook-install.ts",
+      "before": null,
+      "after": {
+        "oid": "9fbb6ad4169d034a924a8b1db1349083758fa5e0",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/adapters/codex-hooks.ts",
+      "before": {
+        "oid": "6a3691300e7406c423ac25199192d48412eb6f48",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "4598a9f50f91755df5545385252d91fd3efb8435",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/adapters/codex.ts",
+      "before": {
+        "oid": "9f3f320376dcee319499598d70e9208bb014d3e5",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "744a944331d0dd3164ead9bf5746c54bcdfdfcc4",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/cli.ts",
+      "before": {
+        "oid": "ea4554047f1cfb363c5bb7205656a7d1562b8514",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "8d8673800cf6643b8813c3e275ce03253dd101f8",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/core/change-recorder.ts",
+      "before": {
+        "oid": "940dd9f5a87d22b11dee8b2229fb17be3a2a228d",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "a701187af53aa76285950dd0da41064a63c82067",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/core/model.ts",
+      "before": {
+        "oid": "b29fe48f29a66af232145d527f82f90c7cdf51c8",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "7b050edbe40b7179fe7355c4b2e79d45c737c87c",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/core/requirement-parties.ts",
+      "before": null,
+      "after": {
+        "oid": "f42f29300e5351e227c33a89778089be0189682c",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/git/git-identity.ts",
+      "before": null,
+      "after": {
+        "oid": "4f4910ce9fd1694e5b21c30bcd21e64bdb92fb5d",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/git/git-observer.ts",
+      "before": {
+        "oid": "4cc2374357804e1a06fe1f7345bdd1524a508b89",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "641b8cb22371795fe94201ec93518224993ce171",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/index.ts",
+      "before": {
+        "oid": "5cbcfdead123f50ecb87b6d396a624e27dfc1b32",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "22ef248db7e152342f2f639f755428f009cf0760",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "src/web/query.ts",
+      "before": {
+        "oid": "7932ffa5a67b4462511e029a23780466df9702bd",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "ef3f95598363e070e6433b2bed5cc6c6a25bad77",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "tests/attribution.test.ts",
+      "before": null,
+      "after": {
+        "oid": "179106b4f1c0de48704af375d519ca102d29e417",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "tests/codex-global-hooks.test.ts",
+      "before": null,
+      "after": {
+        "oid": "e8cf29a18ff04a7efc6a48ef6a107f6d46c06847",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "tests/first-task.e2e.test.ts",
+      "before": {
+        "oid": "a76ffc884d685f4832235d4df5b3143ce7e8563c",
+        "mode": "100644"
+      },
+      "after": {
+        "oid": "991890f2228e78802e43c94a0e162d1a0be0be6b",
+        "mode": "100644"
+      }
+    }
+  ],
+  "attribution": {
+    "developmentIdentity": null,
+    "requestedBy": [],
+    "feedbackBy": []
+  },
+  "affectedCapabilityIds": [
+    "capability_0a0a3e805ab664c1",
+    "capability_23f76e2660727a06",
+    "capability_34b04792d6c1b23f",
+    "capability_8953458a60e6528f"
+  ],
+  "tests": [],
+  "evidence": [
+    {
+      "kind": "requirement",
+      "value": "能不能支持全局安装 codex 钩子，这样不管在哪个项目下使用，只有使用 DomainAtlas 就可以统一生效了"
+    },
+    {
+      "kind": "changed-file",
+      "value": ".codex/hooks.json"
+    },
+    {
+      "kind": "changed-file",
+      "value": "README.md"
+    },
+    {
+      "kind": "changed-file",
+      "value": "apps/web/src/App.tsx"
+    },
+    {
+      "kind": "changed-file",
+      "value": "docs/codex-integration.md"
+    },
+    {
+      "kind": "changed-file",
+      "value": "skills/domainatlas/SKILL.md"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/adapters/codex-hook-install.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/adapters/codex-hooks.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/adapters/codex.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/cli.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/core/change-recorder.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/core/model.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/core/requirement-parties.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/git/git-identity.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/git/git-observer.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/index.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "src/web/query.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "tests/attribution.test.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "tests/codex-global-hooks.test.ts"
+    },
+    {
+      "kind": "changed-file",
+      "value": "tests/first-task.e2e.test.ts"
+    },
+    {
+      "kind": "code-graph",
+      "value": "codebase-memory-mcp (budget-limited)"
+    }
+  ]
+}
