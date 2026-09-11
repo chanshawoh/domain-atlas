@@ -7,7 +7,6 @@
     "dist/src",
     "apps/web/dist",
     "skills",
-    "docs",
     "README.md"
   ],
   "engines": {

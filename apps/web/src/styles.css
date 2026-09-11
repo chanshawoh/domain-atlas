@@ -12,3 +12,9 @@
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 .project-workspace{max-width:1280px;margin:0 auto;padding:36px 32px;display:flex;flex-direction:column;gap:24px}.project-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}.project-card{padding:22px;display:flex;flex-direction:column;gap:18px;align-items:flex-start}.project-card-heading{display:flex;align-items:center;gap:10px;width:100%}.project-card-heading>svg{color:#2563eb}.project-card-heading h2{font-size:16px;font-weight:600;overflow-wrap:anywhere;min-width:0}.project-card-heading .badge{margin-left:auto}.project-path{color:#7c8695;line-height:1.8}.project-card>button{margin-top:auto;color:#2563eb;font-size:12px}.project-problem{font-size:12px;line-height:1.7;color:#a47735;overflow-wrap:anywhere}.project-help{padding:22px;display:flex;flex-direction:column;gap:12px}.project-help h2{font-size:14px;font-weight:550}.project-help p{font-size:12px;color:#7c8695;line-height:1.8}.project-help pre{margin:0;padding:12px;background:#f6f7f9;border-radius:6px}@media(max-width:580px){.project-workspace{padding:24px 16px}.project-grid{grid-template-columns:1fr}.project-workspace .search{flex:1}.project-workspace .search input{width:100%}}
+
+/* Let translated labels size naturally on desktop and narrow screens. */
+.language-switcher{flex-shrink:0;font-size:12px;max-width:100px}
+.record-row{grid-template-columns:115px minmax(0,1fr) max-content max-content}
+@media(max-width:1250px){.record-row{grid-template-columns:90px minmax(0,1fr) max-content max-content}}
+@media(max-width:760px){.topbar>.muted,.topbar>.project-meta.badge{display:none}.topbar .brand{flex-shrink:0}.topbar>.language-switcher{margin-left:auto}.project-meta{display:none}.record-row{grid-template-columns:minmax(0,1fr) max-content max-content}.record-row time{grid-column:1 / -1}.map-toolbar{flex-wrap:wrap}.panel-heading{flex-wrap:wrap;gap:10px}}

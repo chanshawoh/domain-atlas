@@ -59,7 +59,7 @@ export function validatePack(pack, pkg) {
   }
   for (const file of files) {
     if (file.split('/').some(part => part === '..' || part.startsWith('.env') || part === '.domainatlas') ||
-      !/^(?:package\.json|README\.md|LICENSE(?:\.md)?|dist\/src\/.+|apps\/web\/dist\/.+|skills\/.+|docs\/.+)$/.test(file)) {
+      !/^(?:package\.json|README\.md|LICENSE(?:\.md)?|dist\/src\/.+|apps\/web\/dist\/.+|skills\/.+)$/.test(file)) {
       throw new Error(`Unexpected file in npm package: ${file}`);
     }
   }

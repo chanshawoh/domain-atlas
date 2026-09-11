@@ -80,6 +80,10 @@ For projects initialized by older versions, run `domainatlas ui --scan /confirme
 
 Newly registered projects appear after refreshing the project list without restarting the server. Select a project to view its map, baseline and history; use “全部项目” to return. Moved/deleted projects remain listed as unavailable; reinitialize at the new location to register it. Registry IDs identify canonical paths, not business fact IDs. Do not treat an unavailable old path as permission to delete project data.
 
+## Content Language
+
+Generate business names, descriptions, summaries, and evidence explanations in the user's current conversation language, unless the user explicitly requests another language. Preserve original requests, quotations, code identifiers, and paths. Follow this language preference directly; do not add language detection validation or reject mixed-language inputs. The Web UI language is a separate display preference and does not translate stored facts.
+
 ## Build an Existing Project Business Map
 
 A request such as “用 DomainAtlas 构建这个项目已有业务的业务图” authorizes this workflow. Apply the target-root and initialization checks first. A baseline describes current code; it does not reconstruct past requirements, authorship, or historical changes.

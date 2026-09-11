@@ -19,7 +19,7 @@ const missing = () => ({ code: 1, stdout: JSON.stringify({ error: { code: 'E404'
 test('package validation requires CLI, UI and skill assets and rejects private/project files', () => {
   validatePack(pack(), pkg);
   for (const file of ['.domainatlas/changes/private.json', '.codex/hooks.json', 'dist/tests/private.test.js',
-    'src/cli.ts', 'docs/.env', 'skills/../secret', 'node_modules/secret']) {
+    'src/cli.ts', 'docs/.env', 'docs/requirements.md', 'dev-docs/requirements.md', 'DEV_STATE.md', 'skills/../secret', 'node_modules/secret']) {
     assert.throws(() => validatePack({ ...pack(), files: [...pack().files, { path: file }] }, pkg), /Unexpected file/);
   }
   for (const file of files) {

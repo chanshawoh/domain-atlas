@@ -49,13 +49,11 @@ Open [http://127.0.0.1:4310](http://127.0.0.1:4310) and select your project. Exp
 
 Global hook setup preserves other hooks and backs up the original configuration. It does not initialize the current project. Use `domainatlas init -g --codex --dry-run` to preview installation, `domainatlas init -g --codex --uninstall` to remove its global entries, and `domainatlas init --help` for options. `-g` also accepts `--global`.
 
-See [Host integration](docs/codex-integration.md) for hook details and the optional Git pre-commit hook. The DomainAtlas skill supports natural-language requests to build a business map; automatic recording is independent of skill invocation.
-
-See [Business baseline construction](docs/business-baseline.md) for `--dry-run`, scan limits, AI input, and skill installation.
+The DomainAtlas skill supports natural-language requests to build a business map; automatic recording is independent of skill invocation.
 
 ### Use natural language with an AI tool
 
-Install the DomainAtlas CLI, then [install the bundled skill](docs/business-baseline.md#自然语言与-skill) in your AI tool and reload its skills. Run the following prompts in the **target project's workspace**. The AI tool needs access to the project's files and permission to run local commands. In Codex, you can also prefix a request with `$domainatlas`; in other tools, use their skill-loading mechanism. Automatic turn recording currently uses Codex hooks; loading the skill in another tool does not enable those hooks.
+Install the DomainAtlas CLI, then install the [bundled skill](skills/domainatlas/SKILL.md) into your AI tool’s skills directory and reload the tool’s skills. Run the following prompts in the **target project's workspace**. The AI tool needs access to the project's files and permission to run local commands. In Codex, you can also prefix a request with `$domainatlas`; in other tools, use their skill-loading mechanism. Automatic turn recording currently uses Codex hooks; loading the skill in another tool does not enable those hooks.
 
 **Initialize and build a business map with meaningful names:**
 
@@ -90,7 +88,7 @@ Replace `change_ID` and the example business names with real values. Once Codex 
 - **Business map:** explore the project's domains and capabilities in a read-only local Web UI, with links to supporting change history and evidence.
 - **Incremental updates:** completed Codex tasks supply change evidence. Turn-start Git snapshots and turn-end file versions identify incremental changes; duplicate completion events create one record.
 - **Code graph evidence:** prefer the locally installed codebase-memory-mcp structured index without reading the full source tree. When unavailable, inspect changed paths only and emit low-confidence domain and capability nodes.
-- **Supporting change ledger:** preserve immutable records, original requirements, feedback attribution, and evidence in `.domainatlas/`. See [identity and requirement attribution](docs/attribution.md).
+- **Supporting change ledger:** preserve immutable records, original requirements, feedback attribution, and evidence in `.domainatlas/`.
 - **Git traceability:** derive the first commit containing each record and expose its actual author and committer. `stage-records` previews matching records and stages their facts with `--write` only when the full recorded before/after versions match HEAD and the index.
 
 ### Web UI
@@ -99,9 +97,11 @@ Start the shared workbench from any directory:
 
     domainatlas ui
 
-Open [http://127.0.0.1:4310](http://127.0.0.1:4310), select a project, then view its business map and change history. Use `domainatlas ui --port 4311` to change the port. New `init` calls register projects in the user-level directory. For older projects, run `domainatlas ui --scan /path/to/projects` once. See [Multi-project workbench](docs/multi-project-ui.md).
+Open [http://127.0.0.1:4310](http://127.0.0.1:4310), select a project, then view its business map and change history. Use `domainatlas ui --port 4311` to change the port. New `init` calls register projects in the user-level directory. For older projects, run `domainatlas ui --scan /path/to/projects` once.
 
-The UI uses React 19, TypeScript, Vite 7, Tailwind CSS 4 and Lucide; the local API uses Fastify 5. See [Web UI implementation and validation](docs/web-ui-development.md) for the design source, scope and limitations.
+The UI uses React 19, TypeScript, Vite 7, Tailwind CSS 4 and Lucide; the local API uses Fastify 5.
+
+The UI supports Chinese and English. On first use, browser regions CN, TW, HK and MO default to Chinese; other regions default to English. A Chinese browser language without a region also defaults to Chinese. The language selector remembers your choice. AI-generated business content follows the conversation language; switching the UI language does not translate stored facts.
 
 ### Change ledger commands
 
@@ -153,11 +153,11 @@ The release script follows ImageForge MCP's check-first workflow:
     bash script/release.sh
     bash script/release.sh --publish
 
-The first command builds, tests, audits production dependencies and installs a temporary npm tarball to verify the CLI and Web UI. Only `--publish` publishes that exact tarball to npm, after checking `main`, a clean checkout, remote synchronization, authentication and version availability. It never bumps versions, commits, pushes Git, or creates tags. See [release instructions](docs/releasing.md) for prerequisites and verification details.
+The first command builds, tests, audits production dependencies and installs a temporary npm tarball to verify the CLI and Web UI. Only `--publish` publishes that exact tarball to npm, after checking `main`, a clean checkout, remote synchronization, authentication and version availability. It never bumps versions, commits, pushes Git, or creates tags.
 
 ### Deliberate MVP boundary
 
-The hook protocol, stdin CLI, Git pre-commit behavior, and real graph-provider ingest are tested in isolated repositories. Hook trust and activation remain environment-specific; see [the recorded local acceptance](docs/web-ui-product-brief.md). File versions describe changes observed during a turn; they do not prove authorship when multiple actors edit the same worktree. Multi-turn combined diffs and partial staging are conservatively left unmatched. MCP transport, database projections, and Web write operations remain future work.
+The hook protocol, stdin CLI, Git pre-commit behavior, and real graph-provider ingest are tested in isolated repositories. Hook trust and activation remain environment-specific. File versions describe changes observed during a turn; they do not prove authorship when multiple actors edit the same worktree. Multi-turn combined diffs and partial staging are conservatively left unmatched. MCP transport, database projections, and Web write operations remain future work.
 
 ---
 
@@ -208,13 +208,11 @@ domainatlas ui
 
 全局钩子安装会保留其他钩子并备份原配置，不会初始化当前项目。使用 `domainatlas init -g --codex --dry-run` 预览安装，使用 `domainatlas init -g --codex --uninstall` 移除其全局配置项，使用 `domainatlas init --help` 查看选项。`-g` 也可写为 `--global`。
 
-钩子详情及可选的 Git pre-commit 钩子参见[宿主集成](docs/codex-integration.md)。DomainAtlas 技能支持通过自然语言请求构建业务图；自动记录独立于技能调用。
-
-构建预览、扫描范围、AI 输入格式和 skill 安装方法参见[初始业务图构建](docs/business-baseline.md)。
+DomainAtlas 技能支持通过自然语言请求构建业务图；自动记录独立于技能调用。
 
 ### 在 AI 工具中用自然语言使用
 
-安装 DomainAtlas CLI 后，将[包内技能安装到 AI 工具](docs/business-baseline.md#自然语言与-skill)，并让工具重新加载技能。在**需要分析的目标项目工作区**中发送下面的提示词，AI 工具需能读取项目文件并执行本地命令。Codex 中也可在请求前加 `$domainatlas`，其他工具按各自方式加载技能。当前自动轮次记录通过 Codex hooks 接入，在其他工具中加载技能不会自动启用这些钩子。
+安装 DomainAtlas CLI 后，将[包内技能](skills/domainatlas/SKILL.md)复制到 AI 工具的 skills 目录，并让工具重新加载技能。在**需要分析的目标项目工作区**中发送下面的提示词，AI 工具需能读取项目文件并执行本地命令。Codex 中也可在请求前加 `$domainatlas`，其他工具按各自方式加载技能。当前自动轮次记录通过 Codex hooks 接入，在其他工具中加载技能不会自动启用这些钩子。
 
 **首次初始化并构建有业务含义的业务图：**
 
@@ -249,7 +247,7 @@ AI 负责分析业务语义，再通过 `build --input` 导入基线，CLI 本�
 - **项目业务图：**在只读本地 Web UI 中浏览项目的业务领域和业务能力，并查看支撑它们的变更历史及证据。
 - **增量更新：**已完成的 Codex 任务提供变更证据，通过轮次开始时的 Git 快照和结束时的文件版本识别增量变更；重复的完成事件只生成一条记录。
 - **代码图谱证据：**优先使用本地 codebase-memory-mcp 结构化索引，无需读取完整源码树；不可用时仅检查变更路径，生成低置信度的业务领域和能力节点。
-- **辅助变更账本：**在 `.domainatlas/` 中保留不可变记录、原始需求、反馈归属和证据。参见[身份与需求归属](docs/attribution.md)。
+- **辅助变更账本：**在 `.domainatlas/` 中保留不可变记录、原始需求、反馈归属和证据。
 - **Git 追溯：**推导首次包含各条记录的提交，展示实际作者和提交者。`stage-records` 预览匹配记录，只有完整的变更前后版本与 HEAD 和暂存区一致时，才通过 `--write` 暂存其事实文件。
 
 ### Web UI
@@ -258,9 +256,11 @@ AI 负责分析业务语义，再通过 `build --input` 导入基线，CLI 本�
 
     domainatlas ui
 
-打开 [http://127.0.0.1:4310](http://127.0.0.1:4310)，从全部项目列表进入业务图和历史变更。使用 `domainatlas ui --port 4311` 修改端口。新版本 `init` 会登记项目；旧版项目可通过 `domainatlas ui --scan /项目父目录` 一次性发现。详见[多项目工作台](docs/multi-project-ui.md)。
+打开 [http://127.0.0.1:4310](http://127.0.0.1:4310)，从全部项目列表进入业务图和历史变更。使用 `domainatlas ui --port 4311` 修改端口。新版本 `init` 会登记项目；旧版项目可通过 `domainatlas ui --scan /项目父目录` 一次性发现。
 
-UI 使用 React 19、TypeScript、Vite 7、Tailwind CSS 4 和 Lucide；本地 API 使用 Fastify 5。设计来源、实现范围和限制参见 [Web UI 实现与验证](docs/web-ui-development.md)。
+UI 使用 React 19、TypeScript、Vite 7、Tailwind CSS 4 和 Lucide；本地 API 使用 Fastify 5。
+
+界面支持中文和英文。首次使用时，根据浏览器地区，CN、TW、HK、MO 默认中文，其他地区默认英文；未指定地区的中文浏览器语言也默认中文。可通过语言选择器切换并记住选择。AI 生成的业务内容跟随会话语言，切换界面语言不会翻译已有事实。
 
 ### 变更账本命令
 
@@ -312,8 +312,8 @@ pnpm test:graph
     bash script/release.sh
     bash script/release.sh --publish
 
-第一条命令会构建、测试、审计生产依赖，并安装临时 npm tarball 以验证 CLI 和 Web UI。只有 `--publish` 才会将该 tarball 发布到 npm，发布前会检查当前分支是否为 `main`、工作区是否干净、是否与远端同步、认证状态及版本是否可用。脚本不会自动升级版本、创建提交、推送 Git 或创建标签。前置条件和验证细节参见[发布说明](docs/releasing.md)。
+第一条命令会构建、测试、审计生产依赖，并安装临时 npm tarball 以验证 CLI 和 Web UI。只有 `--publish` 才会将该 tarball 发布到 npm，发布前会检查当前分支是否为 `main`、工作区是否干净、是否与远端同步、认证状态及版本是否可用。脚本不会自动升级版本、创建提交、推送 Git 或创建标签。
 
 ### MVP 的明确边界
 
-hook 协议、stdin CLI、Git pre-commit 行为以及真实代码图提供方的数据接入均已在隔离仓库中测试。hook 的信任和启用仍取决于具体环境；参见[已记录的本地验收](docs/web-ui-product-brief.md)。文件版本描述的是一轮任务中观察到的变更；当多个参与方编辑同一工作区时，它们不能证明作者归属。跨多轮的合并差异和部分暂存采取保守策略，不予匹配。MCP 传输、数据库投影和 Web 写入操作仍属于后续工作。
+hook 协议、stdin CLI、Git pre-commit 行为以及真实代码图提供方的数据接入均已在隔离仓库中测试。hook 的信任和启用仍取决于具体环境。文件版本描述的是一轮任务中观察到的变更；当多个参与方编辑同一工作区时，它们不能证明作者归属。跨多轮的合并差异和部分暂存采取保守策略，不予匹配。MCP 传输、数据库投影和 Web 写入操作仍属于后续工作。
