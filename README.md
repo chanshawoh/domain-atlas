@@ -71,6 +71,15 @@ For frontend development, keep `pnpm ui` running and run `pnpm dev:web` in a sec
 
 The UI uses React 19, TypeScript, Vite 7, Tailwind CSS 4 and Lucide; the local API uses Fastify 5. See [Web UI implementation and validation](docs/web-ui-development.md) for the design source, scope and limitations.
 
+## Maintainer release
+
+The release script follows ImageForge MCP's check-first workflow:
+
+    bash script/release.sh
+    bash script/release.sh --publish
+
+The first command builds, tests, audits production dependencies and installs a temporary npm tarball to verify the CLI and Web UI. Only `--publish` publishes that exact tarball to npm, after checking `main`, a clean checkout, remote synchronization, authentication and version availability. It never bumps versions, commits, pushes Git, or creates tags. See [release instructions](docs/releasing.md) for prerequisites and verification details.
+
 ## Deliberate MVP boundary
 
 The hook protocol, stdin CLI, Git pre-commit behavior, and real graph-provider ingest are tested in isolated repositories. Hook trust and activation remain environment-specific; see [the recorded local acceptance](docs/web-ui-product-brief.md). File versions describe changes observed during a turn; they do not prove authorship when multiple actors edit the same worktree. Multi-turn combined diffs and partial staging are conservatively left unmatched. MCP transport, database projections, and Web write operations remain future work.
