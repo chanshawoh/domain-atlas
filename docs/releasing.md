@@ -26,6 +26,14 @@ bash script/release.sh --help
 3. 审阅并提交、推送准备好的修改，使本地 `main` 与远端 `origin/main` 的 SHA 一致。
 4. 确认 npm 账号有目标包名的发布权限，必要时运行 `npm login --registry=https://registry.npmjs.org`，再执行 `--publish`。首次发布时包名可用性和账号权限最终以 Registry 为准。脚本不自动登录，不读取或打印令牌。
 
+### npm 两步验证（EOTP）
+
+在本机交互终端直接运行 `bash script/release.sh --publish`。最后的真实 `npm publish` 继承终端输入输出；如果 npm 账号要求两步验证，npm 会在此时提示输入认证器中的最新验证码，或打开其提供的浏览器验证流程。无需在开始构建前准备验证码，DomainAtlas 不采集或保存验证码。
+
+`npm whoami` 成功只说明已经登录，不代表发布无需 OTP。通过管道或无 TTY 的 CI 运行时，npm 无法交互询问验证码；需要在运行环境中使用 npm 支持的发布认证方式。临时 `npm_config_otp` 环境变量也会由 npm 读取，但验证码可能在构建结束前过期，因此本机发布优先使用终端交互。
+
+若 npm 已返回 `EOTP` 并退出，本次发布没有通过认证；重新运行前先确认目标版本是否存在。脚本会自行查询 Registry 并拒绝覆盖已有版本。修复脚本后仍需将改动提交、推送到 `origin/main`，才能通过正式发布的 Git 状态检查。
+
 ## 自动检查内容
 
 - 校验版本一致性、公开 Registry 配置和 pnpm 版本；`pnpm install --frozen-lockfile --ignore-scripts` 使用锁文件，随后执行 `pnpm test`，包含前后端构建和回归测试。
@@ -35,7 +43,7 @@ bash script/release.sh --help
 - 对该 `.tgz` 执行 `npm publish --dry-run`。检查模式下未登录只提示；实际发布必须登录。
 - 查询准确版本和 `latest`。只有明确 `E404` 才视为不存在，认证、限流、网络错误不会当作包名可用。已发布版本不可覆盖；检查模式只允许其 Registry shasum 与本地包一致。新版本必须高于当前 `latest`。
 - 正式发布前再次检查分支、工作区、HEAD 和远端 SHA，并核对压缩包未变；发布的是同一个经过安装验证的包，禁用生命周期脚本以避免重新构建。
-- 发布后最多查询 6 次，核对准确版本、`latest` 和 Registry shasum。发布请求只发送一次，失败不会自动重试；如果发布成功但校验失败，应先人工检查 Registry 状态。
+- 发布后最多查询 6 次，核对准确版本、`latest` 和 Registry shasum。只启动一次正式 `npm publish` 进程，npm 自身可在该进程内完成 OTP 或浏览器验证后继续请求；脚本不会自动重启失败的发布进程。如果发布成功但校验失败，应先人工检查 Registry 状态。
 
 ## 安装与发布边界
 

@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { registryResult, release, validatePack } from './release.mjs';
+import { execute, registryResult, release, validatePack } from './release.mjs';
 
 const files = ['package.json', 'README.md', 'dist/src/cli.js', 'dist/src/web/server.js',
   'apps/web/dist/index.html', 'apps/web/dist/domainatlas.svg', 'apps/web/dist/assets/app.js',
@@ -48,8 +48,8 @@ async function fixture(t, options = {}) {
   let statusChecks = 0;
   const archive = Buffer.from('the one verified package archive');
   const shasum = createHash('sha1').update(archive).digest('hex');
-  async function run(bin, args, directory) {
-    calls.push({ bin, args, directory });
+  async function run(bin, args, directory, execution = {}) {
+    calls.push({ bin, args, directory, execution });
     if (bin === 'pnpm' && args[0] === '--version') return success('11.13.0');
     if (bin === 'pnpm' && args[0] === 'test' && options.testFailure) return { code: 1, stdout: '', stderr: 'test failed' };
     if (bin === 'git') {
@@ -92,6 +92,7 @@ test('check mode exercises the package without publishing even when npm authenti
   assert.equal(context.publishCalls().length, 0);
   assert.ok(context.calls.some(call => call.bin === 'npm' && call.args.includes('--dry-run')));
   assert.ok(context.calls.some(call => call.bin === 'npm' && call.args[0] === 'install' && call.args.includes('--omit=dev')));
+  assert.ok(context.calls.every(call => !call.execution.inheritStdio));
 });
 
 test('publication guards stop dirty, divergent, unauthenticated, failing or already-published releases', async t => {
@@ -107,12 +108,24 @@ test('publication sends the single smoke-tested archive, verifies Registry, and 
   const context = await fixture(t);
   await release({ ...context, publish: true });
   assert.equal(context.publishCalls().length, 1);
+  assert.equal(context.publishCalls()[0].execution.inheritStdio, true);
+  assert.equal(context.calls.filter(call => call.execution.inheritStdio).length, 1);
   const file = context.publishCalls()[0].args[1];
   assert.ok(file.endsWith('domainatlas-0.1.0.tgz'));
   assert.ok(context.calls.some(call => call.bin === 'npm' && call.args[0] === 'install' && call.args.includes(file)));
   assert.ok(context.calls.some(call => call.bin === 'npm' && call.args[0] === 'publish' && call.args[1] === file && call.args.includes('--dry-run')));
   assert.ok(!context.calls.some(call => call.bin === 'git' && ['commit', 'push', 'tag', 'reset', 'rebase'].includes(call.args[0])));
   assert.equal(context.calls.filter(call => call.bin === 'git' && call.args[0] === 'ls-remote').length, 2);
+});
+
+test('interactive command execution reports nonzero exits, interruption and missing executables', async () => {
+  const options = { inheritStdio: true };
+  assert.equal((await execute(process.execPath, ['-e', 'process.exit(0)'], process.cwd(), options)).code, 0);
+  assert.equal((await execute(process.execPath, ['-e', 'process.exit(7)'], process.cwd(), options)).code, 7);
+  const interrupted = await execute(process.execPath, ['-e', 'process.kill(process.pid, "SIGTERM")'], process.cwd(), options);
+  assert.notEqual(interrupted.code, 0);
+  assert.match(interrupted.stderr, /SIGTERM/);
+  await assert.rejects(execute('/nonexistent/domainatlas-test-command', [], process.cwd(), options), { code: 'ENOENT' });
 });
 
 test('failed publication is not retried and a post-publication checksum mismatch is reported', async t => {

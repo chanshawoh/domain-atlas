@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
@@ -15,10 +15,19 @@ const help = `Usage:
 Publication requires main, a clean checkout synchronized with origin/main,
 npm authentication and an unpublished stable version. No version bump, commit,
 Git push, tag or GitHub Release is created. Failed publication is never retried.
+Run --publish in a terminal so npm can prompt for two-factor authentication.
 The check mode builds files and installs a tarball in a temporary directory;
 it never publishes, changes global hooks or initializes the current project.`;
 
-function execute(command, args, cwd) {
+export function execute(command, args, cwd, { inheritStdio = false } = {}) {
+  if (inheritStdio) {
+    return new Promise((resolve, reject) => {
+      const child = spawn(command, args, { cwd, stdio: 'inherit' });
+      child.once('error', reject);
+      child.once('close', (code, signal) => resolve({ code: code ?? 1, stdout: '',
+        stderr: signal ? `Process terminated by ${signal}` : '' }));
+    });
+  }
   return new Promise((resolve, reject) => {
     execFile(command, args, { cwd, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }, (error, stdout, stderr) => {
       if (error && typeof error.code !== 'number') return reject(error);
@@ -79,14 +88,14 @@ console.log('Installed CLI and Web UI smoke checks passed.');
 `;
 
 export async function release({ cwd = root, publish = false, run = execute, log = console.log } = {}) {
-  async function command(bin, args, directory = cwd) {
-    const result = await run(bin, args, directory);
+  async function command(bin, args, directory = cwd, options = {}) {
+    const result = await run(bin, args, directory, options);
     if (result.code !== 0) throw new Error(`${bin} ${args[0]} failed (${result.code})\n${result.stderr || result.stdout}`);
     return result.stdout.trim();
   }
-  async function visible(bin, args, directory = cwd) {
+  async function visible(bin, args, directory = cwd, options = {}) {
     log(`> ${bin} ${args.join(' ')}`);
-    const output = await command(bin, args, directory);
+    const output = await command(bin, args, directory, options);
     if (output) log(output);
   }
   const pkg = JSON.parse(await readFile(path.join(cwd, 'package.json'), 'utf8'));
@@ -163,8 +172,11 @@ export async function release({ cwd = root, publish = false, run = execute, log 
     if (!publish) { log(`Release checks passed: ${id}. Nothing published.`); return; }
     await assertPublishSource();
     if (createHash('sha1').update(await readFile(tarball)).digest('hex') !== localShasum) throw new Error('Tarball changed after validation');
-    // Publish the exact tested archive once. No source repacking or retry.
-    await visible('npm', ['publish', tarball, '--ignore-scripts', '--access', 'public', '--tag', 'latest', ...registryArgs]);
+    // npm's own OTP/web authentication requires inherited stdin AND stdout TTYs.
+    // Start one npm process; it handles authentication without exposing OTPs here.
+    // Do not repack or restart a failed publish process.
+    await visible('npm', ['publish', tarball, '--ignore-scripts', '--access', 'public', '--tag', 'latest', ...registryArgs],
+      cwd, { inheritStdio: true });
     for (let attempt = 0; attempt < 6; attempt += 1) {
       const [exact, tagged] = await Promise.all([view(id), view(`${pkg.name}@latest`)]);
       if (exact?.version === pkg.version && tagged?.version === pkg.version) {
