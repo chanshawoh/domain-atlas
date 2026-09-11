@@ -5,6 +5,7 @@ import { promisify } from 'node:util';
 import { z } from 'zod';
 import { GitObserver } from '../git/git-observer.js';
 import type { AtlasSnapshot, ProjectedChange } from './contracts.js';
+import { baselineSchema } from '../core/baseline.js';
 
 const exec = promisify(execFile);
 const id = z.string().regex(/^[a-z0-9_-]+$/i);
@@ -83,12 +84,17 @@ export async function readAtlas(projectRoot: string): Promise<AtlasSnapshot> {
   try {
     const root = path.join(projectRoot, '.domainatlas');
     const initialized = await existsDirectory(root);
-    const [domains, capabilities, changes] = await Promise.all([
+    const [domains, capabilities, changes, baselines] = await Promise.all([
       readRecords(path.join(root, 'domains'), domain),
       readRecords(path.join(root, 'capabilities'), capability),
       readRecords(path.join(root, 'changes'), change),
+      readRecords(path.join(root, 'baselines'), baselineSchema),
     ]);
-    facts = { domains, capabilities, changes, initialized };
+    const baseline = baselines.sort((a, b) => b.recordedAt.localeCompare(a.recordedAt) || a.id.localeCompare(b.id))[0];
+    // Baseline semantics take precedence for matching IDs; retain incremental nodes and history.
+    const mergedDomains = [...new Map([...domains, ...(baseline?.discovery.domains ?? [])].map(node => [node.id, node])).values()];
+    const mergedCapabilities = [...new Map([...capabilities, ...(baseline?.discovery.capabilities ?? [])].map(node => [node.id, node])).values()];
+    facts = { domains: mergedDomains, capabilities: mergedCapabilities, changes, initialized, baseline };
   } catch (error) {
     throw new ProjectionError('FACTS_INVALID', '无法读取事实数据：' + (error as Error).message);
   }
@@ -107,6 +113,7 @@ export async function readAtlas(projectRoot: string): Promise<AtlasSnapshot> {
   return {
     project: { name: path.basename(projectRoot), root: projectRoot, branch, initialized: facts.initialized },
     domains: facts.domains, capabilities: facts.capabilities, changes,
+    ...(facts.baseline ? { baseline: { id: facts.baseline.id, recordedAt: facts.baseline.recordedAt, head: facts.baseline.head, coverage: facts.baseline.coverage } } : {}),
     totals: { domains: facts.domains.length, capabilities: facts.capabilities.length, changes: changes.length, pending, committed: changes.length - pending },
   };
 }

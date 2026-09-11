@@ -53,3 +53,9 @@ pnpm ui --port 4311
 - 390px 窄屏检查未出现页面水平溢出，首次加载不展开详情，能力侧面板可打开/关闭；接入说明可见，浏览器无 error/warn 日志。
 
 本次仅本地实现与验证，没有暂存、提交、推送或部署。
+
+## 多项目工作台扩展
+
+UI 首页为全部项目列表，项目以用户级登记目录中的稳定 ID 路由。`GET /api/projects` 返回可用/不可用项目；`GET /api/projects/:projectId/atlas` 和 `GET /api/projects/:projectId/changes/:id` 只读取对应登记项目。原 `/api/atlas` 与 `/api/changes/:id` 保留启动目录投影供现有调用方使用，新 UI 使用项目路由。服务端不接受客户端提交磁盘路径。
+
+`init` 和显式 `ui --scan` 更新项目登记，浏览器 API 仍只读。项目路径不会进入各项目的业务事实；失效项目不会阻断其他项目。使用说明见[多项目工作台](multi-project-ui.md)。

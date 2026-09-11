@@ -8,6 +8,9 @@ import { createDomainAtlasRuntime } from "./runtime.js";
 import { handleCodexHook } from "./adapters/codex-hooks.js";
 import { stageMatchingRecords } from "./git/stage-records.js";
 import { configureCodexHooks } from "./adapters/codex-hook-install.js";
+import { readFile } from "node:fs/promises";
+import { buildBaseline } from "./core/build-baseline.js";
+import { discoverProjects, findGitRoot, registerProject } from "./storage/project-registry.js";
 
 function values(args: string[], flag: string): string[] {
   const result: string[] = [];
@@ -39,7 +42,8 @@ function usage(): string {
     "  domainatlas init -g --codex [--dry-run] [--uninstall] [--codex-home PATH]",
     "  domainatlas ingest-codex --request TEXT --summary TEXT [--task-id ID] [--kind KIND --supersedes ID] [--changed-file PATH]... [--test-command COMMAND --test-status STATUS]",
     "  domainatlas list",
-    "  domainatlas ui [--port 4310]  (read-only local Web UI)",
+    "  domainatlas build [--input FILE] [--dry-run] [--max-files 200]  (current business baseline)",
+    "  domainatlas ui [--port 4310] [--scan PATH]...  (all initialized projects)",
     "  domainatlas codex-hook [--global]  (reads one Codex hook JSON object from stdin)",
     "  domainatlas stage-records [--write]  (preview by default)",
   ].join("\n");
@@ -49,7 +53,7 @@ function initUsage(): string {
   return [
     "Usage: domainatlas init [OPTIONS]",
     "",
-    "Without options, initialize .domainatlas in the current project.",
+    "Without options, initialize .domainatlas at the Git root and register it in the shared project directory.",
     "With -g --codex, install user-level Codex hooks without initializing the current project.",
     "",
     "  -g, --global       Configure user-level hooks (requires --codex)",
@@ -96,16 +100,43 @@ async function main(): Promise<void> {
       process.stdout.write(JSON.stringify(result, null, 2) + "\n");
       return;
     }
-    await createDomainAtlasRuntime(process.cwd()).store.initialize();
-    process.stdout.write("Initialized .domainatlas in " + process.cwd() + "\n");
+    const root = await findGitRoot(process.cwd());
+    await createDomainAtlasRuntime(root ?? process.cwd()).store.initialize();
+    if (root) await registerProject(root);
+    process.stdout.write("Initialized .domainatlas in " + (root ?? process.cwd()) + "\n");
     return;
   }
   if (command === "ui") {
-    if (args.length && (args.length !== 2 || args[0] !== "--port")) throw new Error("Usage: domainatlas ui [--port 4310]");
-    const port = Number(value(args, "--port") ?? 4310);
+    const { values: options } = parseArgs({ args, allowPositionals: false, options: {
+      port: { type: "string" }, scan: { type: "string", multiple: true }, help: { type: "boolean", short: "h" },
+    } });
+    if (options.help) {
+      process.stdout.write("Usage: domainatlas ui [--port 4310] [--scan PATH]...\nStart one workbench for all registered projects, from any directory.\n--scan discovers previously initialized projects under PATH and registers them.\nProject registry: DOMAINATLAS_HOME/projects (default ~/.domainatlas/projects).\n");
+      return;
+    }
+    const port = Number(options.port ?? 4310);
     if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid --port");
+    if (options.scan?.some(directory => !directory.trim())) throw new Error("--scan must not be empty");
+    for (const directory of options.scan ?? []) {
+      process.stdout.write(JSON.stringify(await discoverProjects(directory)) + "\n");
+    }
     const { startWebServer } = await import("./web/server.js");
     await startWebServer(process.cwd(), port);
+    return;
+  }
+  if (command === "build") {
+    const { values: options } = parseArgs({ args, allowPositionals: false, options: {
+      input: { type: "string" }, "dry-run": { type: "boolean" }, "max-files": { type: "string" }, help: { type: "boolean", short: "h" },
+    } });
+    if (options.help) {
+      process.stdout.write("Usage: domainatlas build [--input FILE] [--dry-run] [--max-files 200]\nBuild the current business baseline from tracked source files or an AI-analyzed JSON manifest.\nRequires domainatlas init. Writes an immutable baseline, not historical changes.\n--dry-run validates and previews without writing. --max-files: 1..2000 (default 200).\nSee docs/business-baseline.md for input schema and the DomainAtlas skill workflow.\n");
+      return;
+    }
+    const result = await buildBaseline(process.cwd(), { dryRun: options["dry-run"],
+      ...(options.input !== undefined ? { input: JSON.parse(await readFile(options.input, "utf8")) } : {}),
+      ...(options["max-files"] !== undefined ? { maxFiles: Number(options["max-files"]) } : {}),
+    });
+    process.stdout.write(JSON.stringify(result, null, 2) + "\n");
     return;
   }
   if (command === "codex-hook") {

@@ -4,6 +4,7 @@ import { access, link, mkdir, readFile, readdir, unlink, writeFile } from "node:
 import path from "node:path";
 import type { BusinessCapability, BusinessDomain, ChangeRecord } from "../core/model.js";
 import type { DomainModelStore, StoredChange } from "../core/ports.js";
+import type { BusinessBaseline } from "../core/baseline.js";
 
 const SAFE_ID = /^[a-z0-9_-]+$/i;
 
@@ -69,6 +70,17 @@ export class FileDomainModelStore implements DomainModelStore {
         schemaVersion: 1,
         storage: "immutable-json-files",
       });
+    }
+  }
+
+  async appendBaseline(baseline: BusinessBaseline): Promise<boolean> {
+    assertSafeId(baseline.id);
+    try {
+      await writeJsonExclusive(path.join(this.atlasRoot, "baselines", baseline.id + ".json"), baseline);
+      return true;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "EEXIST") return false;
+      throw error;
     }
   }
 

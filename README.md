@@ -6,7 +6,7 @@
 
 DomainAtlas maintains a dynamically updated business map of your project as it evolves through AI-assisted development. Its core purpose is to help you understand the project's business domains and capabilities. An append-only change ledger supports the map with evidence and a traceable history of changes.
 
-The current MVP derives a two-level map (domain → capability) from completed Codex tasks and code graph evidence, starting with the first recorded task. It builds the map incrementally from observed changes; initialization alone does not produce a complete map of an existing project.
+Build an initial two-level map (domain → capability) of existing code with `domainatlas build`, or use the DomainAtlas skill for AI-assisted business analysis. Completed Codex tasks then extend the map incrementally. Initialization alone does not build a map; baseline construction does not replay Git history.
 
 ### Installation (recommended)
 
@@ -38,17 +38,20 @@ domainatlas init
 
 Continue working in Codex. Initialized projects record completed turns automatically without a prompt prefix or skill invocation. If you initialize midway through a turn, recording starts with the next turn. Uninitialized projects and non-Git directories are skipped without creating files.
 
-**3. Open your business map:**
+**3. Build the existing project baseline and open your business map:**
 
 ```sh
+domainatlas build
 domainatlas ui
 ```
 
-Open [http://127.0.0.1:4310](http://127.0.0.1:4310). Explore the domains and capabilities derived from recorded turns, then inspect supporting changes and evidence. Use `domainatlas list` to inspect the auxiliary ledger; Git determines whether records are pending or committed.
+Open [http://127.0.0.1:4310](http://127.0.0.1:4310) and select your project. Explore the domains and capabilities derived from recorded turns, then inspect supporting changes and evidence. Use `domainatlas list` to inspect the auxiliary ledger; Git determines whether records are pending or committed.
 
 Global hook setup preserves other hooks and backs up the original configuration. It does not initialize the current project. Use `domainatlas init -g --codex --dry-run` to preview installation, `domainatlas init -g --codex --uninstall` to remove its global entries, and `domainatlas init --help` for options. `-g` also accepts `--global`.
 
-See [Host integration](docs/codex-integration.md) for hook details and the optional Git pre-commit hook. The DomainAtlas skill remains explicit-only; automatic recording is independent of skill invocation.
+See [Host integration](docs/codex-integration.md) for hook details and the optional Git pre-commit hook. The DomainAtlas skill supports natural-language requests to build a business map; automatic recording is independent of skill invocation.
+
+See [Business baseline construction](docs/business-baseline.md) for `--dry-run`, scan limits, AI input, and skill installation.
 
 ### Business map and supporting capabilities
 
@@ -60,11 +63,11 @@ See [Host integration](docs/codex-integration.md) for hook details and the optio
 
 ### Web UI
 
-From your initialized project's Git root, open the workbench:
+Start the shared workbench from any directory:
 
     domainatlas ui
 
-Open [http://127.0.0.1:4310](http://127.0.0.1:4310). Use `domainatlas ui --port 4311` to change the port.
+Open [http://127.0.0.1:4310](http://127.0.0.1:4310), select a project, then view its business map and change history. Use `domainatlas ui --port 4311` to change the port. New `init` calls register projects in the user-level directory. For older projects, run `domainatlas ui --scan /path/to/projects` once. See [Multi-project workbench](docs/multi-project-ui.md).
 
 The UI uses React 19, TypeScript, Vite 7, Tailwind CSS 4 and Lucide; the local API uses Fastify 5. See [Web UI implementation and validation](docs/web-ui-development.md) for the design source, scope and limitations.
 
@@ -109,7 +112,7 @@ pnpm test
 pnpm test:graph
 ```
 
-For frontend development, start the API with `node /absolute/path/to/domain-atlas/dist/src/cli.js ui` from an initialized project's Git root, then run `pnpm dev:web` in a second terminal in the tool repository. Vite proxies `/api` to port 4310. This repository includes `.codex/hooks.json`; its hooks also require review and trust in Codex `/hooks`.
+For frontend development, start the API with `node /absolute/path/to/domain-atlas/dist/src/cli.js ui` from any directory, then run `pnpm dev:web` in a second terminal in the tool repository. Vite proxies `/api` to port 4310. This repository includes `.codex/hooks.json`; its hooks also require review and trust in Codex `/hooks`.
 
 ### Maintainer release
 
@@ -130,7 +133,7 @@ The hook protocol, stdin CLI, Git pre-commit behavior, and real graph-provider i
 
 DomainAtlas 随 AI 辅助开发过程动态更新项目业务图，帮助你理解项目的业务领域和业务能力。业务图是核心能力；仅追加的变更账本是辅助能力，为业务图提供变更证据和可追溯的演进历史。
 
-当前 MVP 从第一个被记录的 Codex 任务开始，结合已完成任务和代码图谱证据，逐步形成“业务领域 → 业务能力”的两级业务图。业务图基于观察到的变更增量构建，仅初始化不会生成已有项目的完整业务图。
+通过 `domainatlas build` 为已有代码构建“业务领域 → 业务能力”的初始业务图，也可使用 DomainAtlas skill 让 AI 分析业务语义后导入。后续 Codex 任务持续增量更新业务图。初始化本身不构建业务图；初始基线不回放 Git 历史。
 
 ### 安装（推荐）
 
@@ -162,17 +165,20 @@ domainatlas init
 
 接着正常使用 Codex。已初始化项目会自动记录已完成的轮次，无需提示词前缀或调用技能。如果在一轮任务中途初始化，从下一轮开始记录。未初始化的项目和非 Git 目录会被跳过，不会创建文件。
 
-**3. 打开项目业务图：**
+**3. 构建已有项目的业务基线并打开业务图：**
 
 ```sh
+domainatlas build
 domainatlas ui
 ```
 
-打开 [http://127.0.0.1:4310](http://127.0.0.1:4310)。浏览从已记录轮次中推导出的业务领域和能力，并查看关联变更及证据。使用 `domainatlas list` 查看辅助账本，由 Git 判断记录处于待提交还是已提交状态。
+打开 [http://127.0.0.1:4310](http://127.0.0.1:4310)，选择项目后浏览业务领域和能力，并查看关联变更及证据。使用 `domainatlas list` 查看辅助账本，由 Git 判断记录处于待提交还是已提交状态。
 
 全局钩子安装会保留其他钩子并备份原配置，不会初始化当前项目。使用 `domainatlas init -g --codex --dry-run` 预览安装，使用 `domainatlas init -g --codex --uninstall` 移除其全局配置项，使用 `domainatlas init --help` 查看选项。`-g` 也可写为 `--global`。
 
-钩子详情及可选的 Git pre-commit 钩子参见[宿主集成](docs/codex-integration.md)。DomainAtlas 技能仍需显式调用；自动记录独立于技能调用。
+钩子详情及可选的 Git pre-commit 钩子参见[宿主集成](docs/codex-integration.md)。DomainAtlas 技能支持通过自然语言请求构建业务图；自动记录独立于技能调用。
+
+构建预览、扫描范围、AI 输入格式和 skill 安装方法参见[初始业务图构建](docs/business-baseline.md)。
 
 ### 业务图与配套能力
 
@@ -184,11 +190,11 @@ domainatlas ui
 
 ### Web UI
 
-在已初始化项目的 Git 根目录打开工作台：
+在任意目录启动统一项目工作台：
 
     domainatlas ui
 
-打开 [http://127.0.0.1:4310](http://127.0.0.1:4310)。使用 `domainatlas ui --port 4311` 修改端口。
+打开 [http://127.0.0.1:4310](http://127.0.0.1:4310)，从全部项目列表进入业务图和历史变更。使用 `domainatlas ui --port 4311` 修改端口。新版本 `init` 会登记项目；旧版项目可通过 `domainatlas ui --scan /项目父目录` 一次性发现。详见[多项目工作台](docs/multi-project-ui.md)。
 
 UI 使用 React 19、TypeScript、Vite 7、Tailwind CSS 4 和 Lucide；本地 API 使用 Fastify 5。设计来源、实现范围和限制参见 [Web UI 实现与验证](docs/web-ui-development.md)。
 
@@ -233,7 +239,7 @@ pnpm test
 pnpm test:graph
 ```
 
-前端开发时，在已初始化项目的 Git 根目录执行 `node /absolute/path/to/domain-atlas/dist/src/cli.js ui` 启动 API，再在工具仓库的另一个终端执行 `pnpm dev:web`。Vite 将 `/api` 代理到端口 4310。本仓库包含 `.codex/hooks.json`，其钩子同样需要在 Codex `/hooks` 中审核并信任。
+前端开发时，在任意目录执行 `node /absolute/path/to/domain-atlas/dist/src/cli.js ui` 启动 API，再在工具仓库的另一个终端执行 `pnpm dev:web`。Vite 将 `/api` 代理到端口 4310。本仓库包含 `.codex/hooks.json`，其钩子同样需要在 Codex `/hooks` 中审核并信任。
 
 ### 维护者发布流程
 
