@@ -6,7 +6,7 @@
 
 DomainAtlas maintains a dynamically updated business map of your project as it evolves through AI-assisted development. Its core purpose is to help you understand the project's business domains and capabilities. An append-only change ledger supports the map with evidence and a traceable history of changes.
 
-Build an initial two-level map (domain → capability) of existing code with `domainatlas build`, or use the DomainAtlas skill for AI-assisted business analysis. Completed Codex tasks then extend the map incrementally. Initialization alone does not build a map; baseline construction does not replay Git history.
+Build an initial two-level map (domain → capability) of existing code with `domainatlas build --input <file>` after the DomainAtlas skill analyzes business responsibilities using a ready codebase-memory index, source and documentation. Missing analysis input stops the build; automatic path/symbol inference is disabled. Completed Codex tasks then extend the map incrementally. Initialization alone does not build a map; baseline construction does not replay Git history.
 
 ### Installation (recommended)
 
@@ -41,7 +41,7 @@ Continue working in Codex. Initialized projects record completed turns automatic
 **3. Build the existing project baseline and open your business map:**
 
 ```sh
-domainatlas build
+domainatlas build --input /absolute/path/to/baseline.json
 domainatlas ui
 ```
 
@@ -52,6 +52,38 @@ Global hook setup preserves other hooks and backs up the original configuration.
 See [Host integration](docs/codex-integration.md) for hook details and the optional Git pre-commit hook. The DomainAtlas skill supports natural-language requests to build a business map; automatic recording is independent of skill invocation.
 
 See [Business baseline construction](docs/business-baseline.md) for `--dry-run`, scan limits, AI input, and skill installation.
+
+### Use natural language with an AI tool
+
+Install the DomainAtlas CLI, then [install the bundled skill](docs/business-baseline.md#自然语言与-skill) in your AI tool and reload its skills. Run the following prompts in the **target project's workspace**. The AI tool needs access to the project's files and permission to run local commands. In Codex, you can also prefix a request with `$domainatlas`; in other tools, use their skill-loading mechanism. Automatic turn recording currently uses Codex hooks; loading the skill in another tool does not enable those hooks.
+
+**Initialize and build a business map with meaningful names:**
+
+> Initialize DomainAtlas for this project, then analyze its source and documentation to build and save a business map. Name domains and capabilities by their business responsibilities, include file evidence, and flag uncertain conclusions. When finished, briefly tell me what was built.
+
+The AI analyzes the business meaning and imports a baseline with `build --input`. The CLI itself does not call a language model. For the remaining examples, initialize the target project first; opening the shared workbench does not require initialization.
+
+**Preview a quick structural map:**
+
+> Use DomainAtlas to preview a business map from up to 100 tracked source files in this project. Do not save the baseline. Tell me how many domains and capabilities were found and whether coverage is limited.
+
+**Open the business map:**
+
+> Open the DomainAtlas workbench so I can select this project and browse its business domains, capabilities, and supporting evidence.
+
+**Inspect recorded changes:**
+
+> Use DomainAtlas to summarize this project's recorded business changes. Show each change's original request, affected capabilities, and whether its record has been committed to Git. Only report information supported by the records.
+
+**Record a completed task when automatic recording is not enabled:**
+
+> Use DomainAtlas to record the business change completed in this task. First check for an existing record to avoid duplication. Include the original request, actual changed files, and verified test results; leave unknown results unspecified.
+
+**Correct an existing record:**
+
+> Use DomainAtlas to correct record change_ID: its affected scope should be “refund review,” not “all order management.” Verify the supporting evidence and append a correction that references the original record.
+
+Replace `change_ID` and the example business names with real values. Once Codex hooks are installed and trusted and the project is initialized, continue normal development without a DomainAtlas prompt prefix; completed turns are recorded automatically.
 
 ### Business map and supporting capabilities
 
@@ -133,7 +165,7 @@ The hook protocol, stdin CLI, Git pre-commit behavior, and real graph-provider i
 
 DomainAtlas 随 AI 辅助开发过程动态更新项目业务图，帮助你理解项目的业务领域和业务能力。业务图是核心能力；仅追加的变更账本是辅助能力，为业务图提供变更证据和可追溯的演进历史。
 
-通过 `domainatlas build` 为已有代码构建“业务领域 → 业务能力”的初始业务图，也可使用 DomainAtlas skill 让 AI 分析业务语义后导入。后续 Codex 任务持续增量更新业务图。初始化本身不构建业务图；初始基线不回放 Git 历史。
+先配置 codebase-memory 并确认目标项目索引就绪，使用 DomainAtlas skill 分析业务语义，再通过 `domainatlas build --input <文件>` 导入“业务领域 → 业务能力”的初始业务图。缺少分析输入时停止构建，已禁用路径和代码符号自动推断。后续 Codex 任务持续增量更新业务图。初始化本身不构建业务图；初始基线不回放 Git 历史。
 
 ### 安装（推荐）
 
@@ -168,7 +200,7 @@ domainatlas init
 **3. 构建已有项目的业务基线并打开业务图：**
 
 ```sh
-domainatlas build
+domainatlas build --input /absolute/path/to/baseline.json
 domainatlas ui
 ```
 
@@ -179,6 +211,38 @@ domainatlas ui
 钩子详情及可选的 Git pre-commit 钩子参见[宿主集成](docs/codex-integration.md)。DomainAtlas 技能支持通过自然语言请求构建业务图；自动记录独立于技能调用。
 
 构建预览、扫描范围、AI 输入格式和 skill 安装方法参见[初始业务图构建](docs/business-baseline.md)。
+
+### 在 AI 工具中用自然语言使用
+
+安装 DomainAtlas CLI 后，将[包内技能安装到 AI 工具](docs/business-baseline.md#自然语言与-skill)，并让工具重新加载技能。在**需要分析的目标项目工作区**中发送下面的提示词，AI 工具需能读取项目文件并执行本地命令。Codex 中也可在请求前加 `$domainatlas`，其他工具按各自方式加载技能。当前自动轮次记录通过 Codex hooks 接入，在其他工具中加载技能不会自动启用这些钩子。
+
+**首次初始化并构建有业务含义的业务图：**
+
+> 为当前项目初始化 DomainAtlas，然后分析源码和项目文档，构建并保存业务图。按实际业务职责命名业务领域和能力，附上文件证据，标明不确定的结论。完成后简短告诉我构建了什么。
+
+AI 负责分析业务语义，再通过 `build --input` 导入基线，CLI 本身不调用大模型。下面涉及项目数据的示例需先初始化目标项目；仅打开统一工作台无需初始化。
+
+**快速预览结构，不保存业务图：**
+
+> 用 DomainAtlas 预览当前项目的业务图，最多分析 100 个已跟踪源码文件，不保存基线。告诉我发现了多少个业务领域和能力，以及分析范围是否有限。
+
+**打开业务图浏览：**
+
+> 打开 DomainAtlas 工作台，让我选择当前项目，查看业务领域、业务能力和支撑证据。
+
+**查询已经记录的业务变化：**
+
+> 用 DomainAtlas 汇总当前项目已记录的业务变更，说明每项变更的原始需求、影响的业务能力，以及记录是否已提交到 Git。只报告记录中有证据的信息。
+
+**未启用自动记录时，记录已完成的任务：**
+
+> 用 DomainAtlas 记录本次任务已完成的业务变化。先检查是否已有记录，避免重复；记录原始需求、实际修改的文件和已验证的测试结果，未知结果不要补写。
+
+**更正已有记录：**
+
+> 用 DomainAtlas 更正记录 change_ID：影响范围应为“退款审核”，不是“整个订单管理”。请核对支撑证据，追加一条引用原记录的更正。
+
+将 `change_ID` 和示例业务名称替换为真实内容。已安装并信任 Codex hooks、且项目已初始化时，后续正常提出开发需求即可，完成的轮次会自动记录，无需每次加 DomainAtlas 前缀。
 
 ### 业务图与配套能力
 

@@ -8,15 +8,25 @@
 
 ```sh
 domainatlas init
-domainatlas build
+domainatlas build --input /absolute/path/to/baseline.json
 domainatlas ui
 ```
 
-构建默认立即写入。只验证和预览时使用 `domainatlas build --dry-run`；扩大范围时使用 `domainatlas build --max-files 500`（默认 200，范围 1..2000）。按路径排序选取 Git 已跟踪源码，不包含未跟踪文件、测试、文档、依赖和常见构建产物。选取的文件若已删除或不是普通文件，命令会报错；修正索引或文件后重试。文档可作为 AI 输入的证据。
+构建前先在 AI 宿主配置 codebase-memory-mcp，为目标项目根目录建立或刷新索引并确认就绪，再使用 DomainAtlas skill 分析源码和文档、生成下面格式的业务分析 JSON。环境缺失、索引未就绪或业务证据不足时，停止构建并提示补齐条件，不使用路径或符号名凑出业务图。
 
-命令分批调用现有 codebase-memory 索引推导结构；索引不存在或工具未安装时使用低置信度路径推断。工具响应格式错误、进程失败等错误不会被掩盖。构建不会自动刷新索引，请在需要最新图谱证据时先通过 codebase-memory 对目标根目录建立或刷新索引。自动命名主要来自包、符号和路径；要得到业务语言命名，使用下面的 AI 方式。
+`build` 必须提供 `--input`，省略时直接报错退出，不扫描源码、不写入基线；即使存在 codebase 索引也不会自动把代码符号转换成业务能力。CLI 本身没有业务语义分析能力，索引可用不代表业务解释正确。
 
-返回 JSON 包含 `written`、`baseline.id`、领域和能力、证据文件内容哈希、构建时 HEAD，以及 `coverage`。`selectedFiles` 表示选取的文件数，不能证明业务语义完整；`limited` 表示有源码未被选取或图谱预算受限。AI 输入只引用部分文件时也会提示范围有限。
+导入默认立即写入。只验证和预览时添加 `--dry-run`；`--max-files 500` 设置证据文件上限（默认 200，范围 1..2000），超限报错，不截断后继续构建。证据必须引用 Git 已跟踪的普通项目文件，文档也可以作为证据。
+
+执行时显示当前校验和保存阶段；等待超过 5 秒会继续显示当前阶段和累计耗时。进度写入 stderr，最终摘要写入 stdout，默认不打印完整证据和哈希。例如：
+
+```text
+业务图构建完成，已保存：3 个业务领域、12 个业务能力，基于 24 个文件。
+```
+
+预览会显示“预览完成（未保存）”，相同内容重复构建会显示“本次未新增记录”。引用证据仅覆盖部分源码时，摘要会附一行说明。
+
+脚本需要完整结果时使用 `--json`（可与 `--input`、`--dry-run` 组合），关闭进度并返回 JSON，包含 `written`、`baseline.id`、领域和能力、证据文件内容哈希、构建时 HEAD，以及 `coverage`。`selectedFiles` 表示选取的文件数，不能证明业务语义完整；`limited` 表示有源码未被选取。AI 输入只引用部分文件时也会提示范围有限。
 
 ## 自然语言与 skill
 
@@ -59,4 +69,4 @@ AI 分析后生成以下 JSON，再调用 `domainatlas build --input /absolute/p
 
 基线不会增加变更账本条数，`domainatlas list` 仍可能为空。在统一 UI 的全部项目列表中选择该项目，点击刷新可看到领域、能力、证据及基线范围提示。旧版项目未显示时，参见[多项目工作台](multi-project-ui.md)登记项目。基线记录的 HEAD 是扫描时的代码上下文，不表示基线事实已经提交；提交和推送需单独执行。后续已接入的 Codex hooks 继续记录增量变化。
 
-本地开发版本可在目标项目根目录执行 `node /absolute/path/to/DomainAtlas/dist/src/cli.js build`；先在工具仓库 `pnpm build`。源码修改不会自动升级已全局安装的 npm 包。
+本地开发版本可在目标项目根目录执行 `node /absolute/path/to/DomainAtlas/dist/src/cli.js build --input /absolute/path/to/baseline.json`；先在工具仓库 `pnpm build`。源码修改不会自动升级已全局安装的 npm 包。

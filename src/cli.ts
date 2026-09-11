@@ -10,6 +10,7 @@ import { stageMatchingRecords } from "./git/stage-records.js";
 import { configureCodexHooks } from "./adapters/codex-hook-install.js";
 import { readFile } from "node:fs/promises";
 import { buildBaseline } from "./core/build-baseline.js";
+import { formatBuildSummary, startBuildProgress } from "./build-output.js";
 import { discoverProjects, findGitRoot, registerProject } from "./storage/project-registry.js";
 
 function values(args: string[], flag: string): string[] {
@@ -42,7 +43,7 @@ function usage(): string {
     "  domainatlas init -g --codex [--dry-run] [--uninstall] [--codex-home PATH]",
     "  domainatlas ingest-codex --request TEXT --summary TEXT [--task-id ID] [--kind KIND --supersedes ID] [--changed-file PATH]... [--test-command COMMAND --test-status STATUS]",
     "  domainatlas list",
-    "  domainatlas build [--input FILE] [--dry-run] [--max-files 200]  (current business baseline)",
+    "  domainatlas build --input FILE [--dry-run] [--max-files 200] [--json]  (current business baseline)",
     "  domainatlas ui [--port 4310] [--scan PATH]...  (all initialized projects)",
     "  domainatlas codex-hook [--global]  (reads one Codex hook JSON object from stdin)",
     "  domainatlas stage-records [--write]  (preview by default)",
@@ -126,17 +127,25 @@ async function main(): Promise<void> {
   }
   if (command === "build") {
     const { values: options } = parseArgs({ args, allowPositionals: false, options: {
-      input: { type: "string" }, "dry-run": { type: "boolean" }, "max-files": { type: "string" }, help: { type: "boolean", short: "h" },
+      input: { type: "string" }, "dry-run": { type: "boolean" }, "max-files": { type: "string" }, json: { type: "boolean" }, help: { type: "boolean", short: "h" },
     } });
     if (options.help) {
-      process.stdout.write("Usage: domainatlas build [--input FILE] [--dry-run] [--max-files 200]\nBuild the current business baseline from tracked source files or an AI-analyzed JSON manifest.\nRequires domainatlas init. Writes an immutable baseline, not historical changes.\n--dry-run validates and previews without writing. --max-files: 1..2000 (default 200).\nSee docs/business-baseline.md for input schema and the DomainAtlas skill workflow.\n");
+      process.stdout.write("Usage: domainatlas build --input FILE [--dry-run] [--max-files 200] [--json]\nBuild the current business baseline from an AI-analyzed JSON manifest.\nRequires domainatlas init and --input. Automatic graph/path inference is disabled. Prepare codebase-memory-mcp and a ready project index, then use the DomainAtlas skill for business analysis. Writes an immutable baseline, not historical changes.\n--dry-run validates and previews without writing. --max-files: 1..2000 (default 200).\nShows progress on stderr and a completion summary on stdout. --json returns full JSON without progress.\nSee docs/business-baseline.md for input schema and the DomainAtlas skill workflow.\n");
       return;
     }
-    const result = await buildBaseline(process.cwd(), { dryRun: options["dry-run"],
-      ...(options.input !== undefined ? { input: JSON.parse(await readFile(options.input, "utf8")) } : {}),
-      ...(options["max-files"] !== undefined ? { maxFiles: Number(options["max-files"]) } : {}),
-    });
-    process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+    const progress = options.json ? undefined : startBuildProgress(text => process.stderr.write(text));
+    try {
+      if (options.input !== undefined) progress?.update("读取业务分析文件");
+      const result = await buildBaseline(process.cwd(), { dryRun: options["dry-run"],
+        ...(options.input !== undefined ? { input: JSON.parse(await readFile(options.input, "utf8")) } : {}),
+        ...(options["max-files"] !== undefined ? { maxFiles: Number(options["max-files"]) } : {}),
+        onProgress: progress?.update,
+      });
+      progress?.stop();
+      process.stdout.write(options.json ? JSON.stringify(result, null, 2) + "\n" : formatBuildSummary(result, !!options["dry-run"]));
+    } finally {
+      progress?.stop();
+    }
     return;
   }
   if (command === "codex-hook") {
