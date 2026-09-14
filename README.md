@@ -15,7 +15,17 @@ Requires **Node.js 22+** and Git. Install the published [npm package](https://ww
 ```sh
 npm install -g domainatlas
 domainatlas --help
+domainatlas -v
 ```
+
+Upgrade the published CLI and refresh already-installed host hooks (Codex and/or Cursor) in one step:
+
+```sh
+domainatlas upgrade
+domainatlas upgrade --dry-run
+```
+
+`upgrade` does not initialize the current project and does not install hooks for hosts that were never configured. A source checkout skips the npm download and only refreshes hooks to that build.
 
 The current CLI and global hook workflow target macOS/Linux; native Windows has not been verified.
 
@@ -84,6 +94,14 @@ The AI analyzes the business meaning and imports a baseline with `build --input`
 
 Replace `change_ID` and the example business names with real values. Once host hooks are installed and trusted and the project is initialized, continue normal development without a DomainAtlas prompt prefix; completed turns are recorded automatically.
 
+**Check the CLI version:**
+
+> Check the DomainAtlas CLI version.
+
+**Upgrade DomainAtlas and already-installed hosts:**
+
+> Upgrade DomainAtlas to the latest published version and refresh all already-installed host hooks.
+
 ### Business map and supporting capabilities
 
 - **Business map:** explore the project's domains and capabilities in a read-only local Web UI, with links to supporting change history and evidence.
@@ -123,6 +141,14 @@ Preview records that match the currently staged code, then stage their fact file
     domainatlas stage-records
     domainatlas stage-records --write
 
+Check the installed version, or upgrade the published package and refresh already-installed host hooks:
+
+    domainatlas -v
+    domainatlas upgrade
+    domainatlas upgrade --dry-run
+
+`--version` and `version` are aliases for `-v`. `upgrade` uses `CODEX_HOME` / `CURSOR_HOME` (or `~/.codex` / `~/.cursor`) unless you pass `--codex-home` / `--cursor-home`. It does not initialize the current project and does not install hooks for hosts that were never configured.
+
 ### From source (contributors)
 
 Use this option when developing DomainAtlas. Requires Node.js 22+ and the pnpm version pinned in `package.json` (currently 11.13.0).
@@ -133,9 +159,10 @@ cd domain-atlas
 pnpm install --frozen-lockfile
 pnpm build
 pnpm domainatlas --help
+pnpm domainatlas -v
 ```
 
-To use this build on another project, run `node /absolute/path/to/domain-atlas/dist/src/cli.js <command>` from that project's Git root. Build before enabling hooks, and keep the checkout at a stable path because installed hooks reference the CLI by absolute path.
+To use this build on another project, run `node /absolute/path/to/domain-atlas/dist/src/cli.js <command>` from that project's Git root. Build before enabling hooks, and keep the checkout at a stable path because installed hooks reference the CLI by absolute path. `domainatlas upgrade` from a source CLI skips the npm download and only refreshes already-installed host hooks to this build.
 
 Run checks in the tool repository:
 
@@ -175,7 +202,17 @@ DomainAtlas 随 AI 辅助开发过程动态更新项目业务图，帮助你理�
 ```sh
 npm install -g domainatlas
 domainatlas --help
+domainatlas -v
 ```
+
+一键升级已发布的 CLI，并刷新已经安装的宿主钩子（Codex 和/或 Cursor）：
+
+```sh
+domainatlas upgrade
+domainatlas upgrade --dry-run
+```
+
+`upgrade` 不会初始化当前项目，也不会给从未配置过的宿主安装钩子。从源码运行时会跳过 npm 下载，只把钩子刷新到当前构建。
 
 当前 CLI 和全局钩子流程面向 macOS/Linux，尚未验证 Windows 原生环境。
 
@@ -244,6 +281,14 @@ AI 负责分析业务语义，再通过 `build --input` 导入基线，CLI 本�
 
 将 `change_ID` 和示例业务名称替换为真实内容。已安装并信任宿主 hooks、且项目已初始化时，后续正常提出开发需求即可，完成的轮次会自动记录，无需每次加 DomainAtlas 前缀。
 
+**查看 CLI 版本：**
+
+> 查看 DomainAtlas CLI 的版本号。
+
+**升级 DomainAtlas 并刷新已安装宿主：**
+
+> 将 DomainAtlas 升级到最新已发布版本，并刷新所有已经安装的宿主钩子。
+
 ### 业务图与配套能力
 
 - **项目业务图：**在只读本地 Web UI 中浏览项目的业务领域和业务能力，并查看支撑它们的变更历史及证据。
@@ -283,6 +328,14 @@ UI 使用 React 19、TypeScript、Vite 7、Tailwind CSS 4 和 Lucide；本地 AP
     domainatlas stage-records
     domainatlas stage-records --write
 
+查看已安装版本，或升级已发布的包并刷新已经安装的宿主钩子：
+
+    domainatlas -v
+    domainatlas upgrade
+    domainatlas upgrade --dry-run
+
+`--version` 和 `version` 是 `-v` 的别名。`upgrade` 使用 `CODEX_HOME` / `CURSOR_HOME`（未设置时为 `~/.codex` / `~/.cursor`），也可用 `--codex-home` / `--cursor-home` 覆盖。它不会初始化当前项目，也不会给从未配置过的宿主安装钩子。
+
 ### 源码安装（开发者）
 
 开发 DomainAtlas 本身时使用此方式。需要 Node.js 22+ 和 `package.json` 固定的 pnpm 版本（当前为 11.13.0）。
@@ -293,9 +346,10 @@ cd domain-atlas
 pnpm install --frozen-lockfile
 pnpm build
 pnpm domainatlas --help
+pnpm domainatlas -v
 ```
 
-要将此构建用于其他项目，请在目标项目的 Git 根目录运行 `node /absolute/path/to/domain-atlas/dist/src/cli.js <command>`。启用钩子前先构建，并保持源码目录路径稳定，因为已安装的钩子通过绝对路径引用 CLI。
+要将此构建用于其他项目，请在目标项目的 Git 根目录运行 `node /absolute/path/to/domain-atlas/dist/src/cli.js <command>`。启用钩子前先构建，并保持源码目录路径稳定，因为已安装的钩子通过绝对路径引用 CLI。从源码运行 `domainatlas upgrade` 会跳过 npm 下载，只把已安装宿主钩子刷新到当前构建。
 
 在工具仓库中运行检查：
 

@@ -20,6 +20,27 @@ function isManaged(handler: unknown): boolean {
     typeof handler.command === "string" && handler.command.endsWith(" cursor-hook --global");
 }
 
+export async function hasManagedCursorHooks(cursorHome?: string): Promise<boolean> {
+  const file = path.join(path.resolve(cursorHome ?? process.env.CURSOR_HOME ?? path.join(os.homedir(), ".cursor")), "hooks.json");
+  const before = await readFile(file, "utf8").catch((error: NodeJS.ErrnoException) => {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  });
+  if (before === null) return false;
+  const config: unknown = JSON.parse(before);
+  if (!object(config) || (config.hooks !== undefined && !object(config.hooks))) {
+    throw new Error("Invalid Cursor hooks configuration: " + file);
+  }
+  const hooks = (config.hooks ?? {}) as JsonObject;
+  for (const event of events) {
+    const group = hooks[event];
+    if (group === undefined) continue;
+    if (!Array.isArray(group)) throw new Error("Invalid Cursor hook group: " + event);
+    if (group.some(isManaged)) return true;
+  }
+  return false;
+}
+
 export async function configureCursorHooks(options: {
   cliPath: string;
   nodePath?: string;

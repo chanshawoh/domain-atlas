@@ -79,7 +79,11 @@ async function fixture(t, options = {}) {
       }
       return success();
     }
-    if (bin.endsWith('/.bin/domainatlas') && args.includes('--dry-run')) return json({ written: false });
+    if (bin.endsWith('/.bin/domainatlas')) {
+      if (args[0] === '-v') return success(pkg.version);
+      if (args.includes('--dry-run')) return json({ written: false });
+      return success();
+    }
     return success();
   }
   const publishCalls = () => calls.filter(call => call.bin === 'npm' && call.args[0] === 'publish' && !call.args.includes('--dry-run'));

@@ -139,7 +139,11 @@ export async function release({ cwd = root, publish = false, run = execute, log 
     await visible('npm', ['install', '--prefix', installRoot, '--no-save', '--package-lock=false', '--omit=dev',
       '--ignore-scripts', '--no-audit', '--no-fund', tarball, ...registryArgs]);
     const bin = path.join(installRoot, 'node_modules/.bin/domainatlas');
+    if ((await command(bin, ['-v'], temporary)).trim() !== pkg.version) {
+      throw new Error('Installed CLI -v does not match package.json');
+    }
     await command(bin, ['init', '--help'], temporary);
+    await command(bin, ['upgrade', '--help'], temporary);
     const hookHome = path.join(temporary, 'hooks-preview');
     const preview = JSON.parse(await command(bin, ['init', '-g', '--codex', '--dry-run', '--codex-home', hookHome], temporary));
     if (preview.written !== false) throw new Error('Installed CLI unexpectedly wrote global hooks');

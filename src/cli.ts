@@ -14,6 +14,8 @@ import { readFile } from "node:fs/promises";
 import { buildBaseline } from "./core/build-baseline.js";
 import { formatBuildSummary, startBuildProgress } from "./build-output.js";
 import { discoverProjects, findGitRoot, registerProject } from "./storage/project-registry.js";
+import { packageVersion } from "./package-info.js";
+import { formatUpgrade, upgradeDomainAtlas, upgradeUsage } from "./upgrade.js";
 
 function values(args: string[], flag: string): string[] {
   const result: string[] = [];
@@ -50,6 +52,8 @@ async function readHookInput(label: string): Promise<string> {
 function usage(): string {
   return [
     "Usage:",
+    "  domainatlas -v, --version",
+    "  domainatlas upgrade [--dry-run] [--codex-home PATH] [--cursor-home PATH]",
     "  domainatlas init",
     "  domainatlas init -g --codex|--cursor [--dry-run] [--uninstall] [--codex-home PATH] [--cursor-home PATH]",
     "  domainatlas ingest [--host HOST] --request TEXT --summary TEXT [--task-id ID] [--kind KIND --supersedes ID] [--changed-file PATH]... [--test-command COMMAND --test-status STATUS]",
@@ -92,6 +96,35 @@ async function main(): Promise<void> {
   const [command, ...args] = process.argv.slice(2);
   if (command === "--help" || command === "-h") {
     process.stdout.write(usage() + "\n");
+    return;
+  }
+  if (command === "-v" || command === "--version" || command === "version") {
+    process.stdout.write(await packageVersion() + "\n");
+    return;
+  }
+  if (command === "upgrade") {
+    const { values: options } = parseArgs({ args, allowPositionals: false, options: {
+      "dry-run": { type: "boolean" },
+      "codex-home": { type: "string" },
+      "cursor-home": { type: "string" },
+      help: { type: "boolean", short: "h" },
+    } });
+    if (options.help) {
+      process.stdout.write(upgradeUsage() + "\n");
+      return;
+    }
+    if (options["codex-home"] !== undefined && !options["codex-home"].trim()) {
+      throw new Error("--codex-home must not be empty");
+    }
+    if (options["cursor-home"] !== undefined && !options["cursor-home"].trim()) {
+      throw new Error("--cursor-home must not be empty");
+    }
+    process.stdout.write(formatUpgrade(await upgradeDomainAtlas({
+      cliPath: fileURLToPath(import.meta.url),
+      dryRun: options["dry-run"],
+      codexHome: options["codex-home"],
+      cursorHome: options["cursor-home"],
+    })));
     return;
   }
   if (command === "init") {

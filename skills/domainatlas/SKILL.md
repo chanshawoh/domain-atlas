@@ -1,6 +1,6 @@
 ---
 name: domainatlas
-description: Build an initial business map of an existing Git project with DomainAtlas, including natural-language requests such as 构建这个项目的业务图 or 梳理已有业务能力. Also inspect, record, or correct DomainAtlas changes and manage its hooks when requested. Do not trigger for ordinary coding, commits, or unrelated code graph queries.
+description: Build an initial business map of an existing Git project with DomainAtlas, including natural-language requests such as 构建这个项目的业务图 or 梳理已有业务能力. Also inspect, record, or correct DomainAtlas changes, check or upgrade the CLI, and manage its host hooks when requested. Do not trigger for ordinary coding, commits, or unrelated code graph queries.
 ---
 
 # DomainAtlas
@@ -14,25 +14,27 @@ Use the DomainAtlas CLI to work with Git-tracked business change facts while pre
 - The user explicitly invokes `$domainatlas` with a clear operation. If no operation is specified, clarify whether to inspect or record; do not write by default.
 - The user explicitly asks to "initialize DomainAtlas for this project": follow the initialization procedure below.
 - The user explicitly requests global installation or removal of DomainAtlas host hooks (Codex or Cursor): follow the global hook procedure. This operation does not require the current directory to be an initialized project.
+- The user explicitly asks to check the DomainAtlas version: run `-v`. This does not require an initialized project.
+- The user explicitly asks to upgrade DomainAtlas or refresh already-installed host hooks: follow the upgrade procedure. This does not require an initialized project and does not authorize first-time hook installation.
 
-Do not trigger for ordinary coding, fixes, tests, reviews, or commits; the mere presence of `.domainatlas/`, this skill, a graph index, or an installed CLI; or discussion of DomainAtlas, changes to its source, or documentation work. Without a business-map construction request or an explicit instruction to use DomainAtlas, do not proactively check initialization, read business records, execute the CLI, or record the current task as an extra action.
+Do not trigger for ordinary coding, fixes, tests, reviews, or commits; the mere presence of `.domainatlas/`, this skill, a graph index, or an installed CLI; or discussion of DomainAtlas, changes to its source, or documentation work. Without a business-map construction request or an explicit instruction to use DomainAtlas, do not proactively check initialization, read business records, execute the CLI, upgrade the package, or record the current task as an extra action.
 
 Explicit authorization covers only the project, operation, and scope the user specifies. A request to inspect does not authorize agent-initiated writes. Skill invocation and automatic recording are independent: once global hooks are installed and trusted, initialized projects record each turn automatically without a prefix. A request to "record this change" does not authorize global hook installation.
 
 ## Preflight Checks
 
-Opening the shared UI is a global read operation: `domainatlas ui` works outside Git and does not require the current directory to be initialized. It lists registered projects. Apply the following target-project checks to build/record/correct operations; do not block opening the project list because the current directory is uninitialized.
+Opening the shared UI, checking the CLI version, and upgrading the published package are global operations: `domainatlas ui`, `domainatlas -v`, and `domainatlas upgrade` work outside Git and do not require the current directory to be initialized. Apply the following target-project checks to build/record/correct operations; do not block version, upgrade, or the project list because the current directory is uninitialized.
 
 1. Confirm the Git repository root in the user's target directory, and use that root as the working directory for subsequent data operations. Distinguish the **DomainAtlas tool repository** from the **target repository being recorded**. Initialization of the tool repository does not imply initialization of the target repository.
 2. Read the target root's `.domainatlas/config.json` without modifying it. The current format must be valid JSON containing `schemaVersion: 1` and `storage: "immutable-json-files"`. An empty `.domainatlas/` directory, a code graph index, or an installed tool does not establish initialization. A newly initialized project may have no change records; directories such as `changes/` need not exist yet.
-3. If configuration is missing, stop DomainAtlas operations and explain that the target project is not initialized. Do not automatically run `init`, `ingest`, `ingest-codex`, `codex-hook`, or `cursor-hook`, or manually create the fact directory. If configuration is corrupt or its version is unsupported, report the actual issue without overwriting configuration or rebuilding history.
+3. If configuration is missing, stop target-project data operations and explain that the target project is not initialized. Do not automatically run `init`, `ingest`, `ingest-codex`, `upgrade`, `codex-hook`, or `cursor-hook`, or manually create the fact directory. If configuration is corrupt or its version is unsupported, report the actual issue without overwriting configuration or rebuilding history. Version and upgrade requests are not target-project data operations.
 4. **The initialization exception applies only when the user explicitly requests DomainAtlas initialization**: confirm the target Git root, run `init`, reread the configuration to verify success, and continue within the authorized scope. Merely asking to "use DomainAtlas" does not authorize initialization.
 
 ## How to Use
 
 ### Locate the CLI Entry Point
 
-Prefer an installed `domainatlas` CLI after checking `domainatlas build --help`; substitute `domainatlas` for `node "$ATLAS_CLI"` below. Otherwise use existing Node.js, pnpm, and DomainAtlas build artifacts. The source repository's `package.json` pins the pnpm version. If a build is needed, run `pnpm build` in the tool repository; do not install DomainAtlas dependencies in the target business repository. If runtime requirements are missing, report them without automatically installing anything globally.
+Prefer an installed `domainatlas` CLI after checking `domainatlas -v`; substitute `domainatlas` for `node "$ATLAS_CLI"` below. Otherwise use existing Node.js, pnpm, and DomainAtlas build artifacts. The source repository's `package.json` pins the pnpm version. If a build is needed, run `pnpm build` in the tool repository; do not install DomainAtlas dependencies in the target business repository. If runtime requirements are missing, report them without automatically installing or upgrading anything globally.
 
 When the skill resides at `skills/domainatlas/` within the source tree, check whether the directory two levels above it is the tool repository. If the skill has been copied elsewhere, locate the actual CLI again; do not treat the skill directory as the target project. Replace `ATLAS_CLI` below with the verified absolute path to `dist/src/cli.js`:
 
@@ -46,7 +48,7 @@ When operating on the DomainAtlas tool repository itself, `pnpm domainatlas <com
 
 ### Select the Operation Requested by the User
 
-Apply the requested-scope and initialization checks above to target-project data operations. Shared UI launch does not require initialization. Run `init` only under the initialization exception.
+Apply the requested-scope and initialization checks above to target-project data operations. Shared UI launch, `-v`, and `upgrade` do not require initialization. Run `init` only under the initialization exception. Run `upgrade` only when the user explicitly asks to upgrade DomainAtlas or refresh already-installed hosts.
 
 | User request | CLI command | Behavior |
 | --- | --- | --- |
@@ -56,6 +58,8 @@ Apply the requested-scope and initialization checks above to target-project data
 | Preview records matching staged code | `node "$ATLAS_CLI" stage-records` | Preview only; leave the index unchanged |
 | Stage matching business records | `node "$ATLAS_CLI" stage-records --write` | Run only when the user's request includes staging; this does not replace a Git commit or push |
 | Explicitly initialize the target project | `node "$ATLAS_CLI" init` | Create the target Git root's fact configuration and register it in the user-level project directory, without enabling automatic hooks |
+| Check the DomainAtlas CLI version | `node "$ATLAS_CLI" -v` | Print the installed package version. `--version` and `version` are aliases. Does not change hooks or initialize a project |
+| Upgrade DomainAtlas and installed hosts | `node "$ATLAS_CLI" upgrade` | For an npm-installed CLI, install the latest published package, then refresh already-installed Codex and/or Cursor hooks. A source CLI skips the npm download and only refreshes hooks to that build. Add `--dry-run` to preview. `--codex-home` / `--cursor-home` override host config directories. Does not initialize the current project or install hooks for hosts that were never configured |
 
 Recording example (replace the request, summary, and path with actual information from this task):
 
@@ -71,6 +75,20 @@ node "$ATLAS_CLI" ingest --host cursor \
 - Before writing, check whether a record already exists for the same task, especially in projects with hooks enabled. Do not manually duplicate an automatically created record.
 - Use `--kind correction --supersedes <existing-record-ID>` for corrections and `--kind revert --supersedes <existing-record-ID>` for reversal facts, with an accurate request and summary. Verify that the referenced record exists and preserve it. A `revert` record does not execute `git revert`.
 - Derive commit SHAs from Git history; do not manually write them into fact files. Partial staging, missing file-version evidence, or combined changes from multiple tasks may prevent matching. Report the reason returned by the CLI; do not fabricate a match or force-stage all of `.domainatlas/`.
+
+## Version and Upgrade
+
+These commands do not require an initialized project and do not write business facts.
+
+When the user asks for the DomainAtlas version, run `domainatlas -v` (or `node "$ATLAS_CLI" -v`). Report the printed version. Do not initialize a project, install hooks, or query npm.
+
+When the user explicitly asks to upgrade DomainAtlas or refresh already-installed host hooks, run `domainatlas upgrade`. Add `--dry-run` only when they asked to preview. Do not treat a version check, documentation work, or the existence of a newer release as authorization to upgrade.
+
+- An npm-installed CLI (`node_modules/domainatlas`) queries the latest stable published version and, when newer, runs `npm install -g domainatlas@<latest>` before rewriting hooks to that package.
+- A source checkout skips the npm download and only rewrites already-installed host hooks to the current build.
+- Only Codex and/or Cursor hooks that already contain DomainAtlas global handlers are refreshed. Hosts that were never configured are left alone. This command does not install first-time hooks; use `init -g --codex` or `init -g --cursor` under the global hook procedure.
+- Use `--codex-home` or `--cursor-home` only when the user specified those directories. Defaults follow `$CODEX_HOME` / `$CURSOR_HOME`, or `~/.codex` / `~/.cursor`.
+- Report the CLI's summary: whether the package was upgraded, skipped, or already latest, and which hosts were refreshed or absent. Do not claim that copied skills, MCP config, or hook trust were updated.
 
 ## Shared Project Workbench
 
@@ -119,7 +137,7 @@ Baselines are stored separately in `.domainatlas/baselines/`. Identical builds a
 - This skill supports natural-language selection for business-map construction. Selection alone does not authorize unrelated operations.
 - Global hooks run independently: a valid `.domainatlas/config.json` enables automatic recording for a project. Ordinary conversation turns in initialized projects are recorded automatically. Uninitialized projects and non-Git directories are silently skipped without creating configuration or task snapshots. If initialization completes midway through a turn, recording begins with the next turn; do not fabricate a start snapshot for the current turn.
 - When the user explicitly requests global installation, build in the tool repository and run `pnpm domainatlas init -g --codex` or `pnpm domainatlas init -g --cursor` for the requested host. These commands act directly and do not require `--write`. Add `--dry-run` for preview only; see `init --help` for all options. `-g` is equivalent to `--global`. Codex defaults to `$CODEX_HOME/hooks.json` or `~/.codex/hooks.json`; Cursor defaults to `$CURSOR_HOME/hooks.json` or `~/.cursor/hooks.json`. Use `--codex-home` or `--cursor-home` to override. Global installation does not initialize the current project; plain `init` still handles project initialization. Installation preserves other hooks, backs up the previous file, and does not add duplicates on repeated runs. User-level Cursor hooks do not run in Cloud Agents.
-- When the user explicitly requests removal, use `pnpm domainatlas init -g --codex --uninstall` or `pnpm domainatlas init -g --cursor --uninstall`; add `--dry-run` to preview. This removes only the global hooks managed by the installer; project-local hooks exist independently. Global commands reference absolute paths to Node and the tool CLI, so reinstall after moving the tool or changing the Node path.
+- When the user explicitly requests removal, use `pnpm domainatlas init -g --codex --uninstall` or `pnpm domainatlas init -g --cursor --uninstall`; add `--dry-run` to preview. This removes only the global hooks managed by the installer; project-local hooks exist independently. Global commands reference absolute paths to Node and the tool CLI. After an npm upgrade or a moved Node/CLI path, run `domainatlas upgrade` to refresh already-installed hosts; it does not install hooks for hosts that were never configured.
 - New or modified hooks require user review: Codex CLI `/hooks`, or Cursor Settings → Hooks. The installer does not change trust state. Global and project hooks both execute; `codex-hook --global` and `cursor-hook --global` deduplicate by session/turn. Older local Codex hooks without `--global` may still record unconditionally. Update or disable them within the user's authorization; do not claim the global filter intercepts other hooks.
 - Do not additionally install skills, modify MCP configuration, or enable Git pre-commit hooks. Skill invocation policy cannot disable enabled hooks. Distinguish user-requested skill operations from automatic recording for initialized projects.
 - DomainAtlas currently accesses the structured index of `codebase-memory-mcp` through the CLI. For incremental recording only, when the graph is unavailable, follow the implementation's fallback to low-confidence facts. Never use that fallback for baseline construction. For incremental recording, do not scan the full source tree to fill in business semantics. Baseline analysis uses the dedicated workflow above. Do not treat general errors as successful fallback.
