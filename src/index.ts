@@ -1,5 +1,7 @@
+export * from "./adapters/host.js";
 export * from "./adapters/codex.js";
 export * from "./adapters/codex-hooks.js";
+export * from "./adapters/cursor-hooks.js";
 export * from "./git/git-snapshot.js";
 export * from "./git/stage-records.js";
 export * from "./code-graph/fallback-provider.js";

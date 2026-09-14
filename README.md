@@ -6,7 +6,7 @@
 
 DomainAtlas maintains a dynamically updated business map of your project as it evolves through AI-assisted development. Its core purpose is to help you understand the project's business domains and capabilities. An append-only change ledger supports the map with evidence and a traceable history of changes.
 
-Build an initial two-level map (domain → capability) of existing code with `domainatlas build --input <file>` after the DomainAtlas skill analyzes business responsibilities using a ready codebase-memory index, source and documentation. Missing analysis input stops the build; automatic path/symbol inference is disabled. Completed Codex tasks then extend the map incrementally. Initialization alone does not build a map; baseline construction does not replay Git history.
+Build an initial two-level map (domain → capability) of existing code with `domainatlas build --input <file>` after the DomainAtlas skill analyzes business responsibilities using a ready codebase-memory index, source and documentation. Missing analysis input stops the build; automatic path/symbol inference is disabled. Completed Codex or Cursor tasks then extend the map incrementally. Initialization alone does not build a map; baseline construction does not replay Git history.
 
 ### Installation (recommended)
 
@@ -21,13 +21,14 @@ The current CLI and global hook workflow target macOS/Linux; native Windows has 
 
 ### Quick start
 
-**1. Install Codex hooks once:**
+**1. Install host hooks once (Codex, Cursor, or both):**
 
 ```sh
 domainatlas init -g --codex
+domainatlas init -g --cursor
 ```
 
-Review and trust the hooks in Codex `/hooks`.
+Review and trust the hooks in Codex `/hooks` or Cursor Settings → Hooks. User-level Cursor hooks do not run in Cloud Agents.
 
 **2. Initialize each project you want to map:**
 
@@ -36,7 +37,7 @@ cd /path/to/your/git-project
 domainatlas init
 ```
 
-Continue working in Codex. Initialized projects record completed turns automatically without a prompt prefix or skill invocation. If you initialize midway through a turn, recording starts with the next turn. Uninitialized projects and non-Git directories are skipped without creating files.
+Continue working in the connected host. Initialized projects record completed turns automatically without a prompt prefix or skill invocation. If you initialize midway through a turn, recording starts with the next turn. Uninitialized projects and non-Git directories are skipped without creating files.
 
 **3. Build the existing project baseline and open your business map:**
 
@@ -53,7 +54,7 @@ The DomainAtlas skill supports natural-language requests to build a business map
 
 ### Use natural language with an AI tool
 
-Install the DomainAtlas CLI, then install the [bundled skill](skills/domainatlas/SKILL.md) into your AI tool’s skills directory and reload the tool’s skills. Run the following prompts in the **target project's workspace**. The AI tool needs access to the project's files and permission to run local commands. In Codex, you can also prefix a request with `$domainatlas`; in other tools, use their skill-loading mechanism. Automatic turn recording currently uses Codex hooks; loading the skill in another tool does not enable those hooks.
+Install the DomainAtlas CLI, then install the [bundled skill](skills/domainatlas/SKILL.md) into your AI tool’s skills directory and reload the tool’s skills. Run the following prompts in the **target project's workspace**. The AI tool needs access to the project's files and permission to run local commands. In Codex, you can also prefix a request with `$domainatlas`; in other tools, use their skill-loading mechanism. Automatic turn recording uses host hooks (`init -g --codex` or `init -g --cursor`); loading the skill does not enable those hooks.
 
 **Initialize and build a business map with meaningful names:**
 
@@ -81,12 +82,12 @@ The AI analyzes the business meaning and imports a baseline with `build --input`
 
 > Use DomainAtlas to correct record change_ID: its affected scope should be “refund review,” not “all order management.” Verify the supporting evidence and append a correction that references the original record.
 
-Replace `change_ID` and the example business names with real values. Once Codex hooks are installed and trusted and the project is initialized, continue normal development without a DomainAtlas prompt prefix; completed turns are recorded automatically.
+Replace `change_ID` and the example business names with real values. Once host hooks are installed and trusted and the project is initialized, continue normal development without a DomainAtlas prompt prefix; completed turns are recorded automatically.
 
 ### Business map and supporting capabilities
 
 - **Business map:** explore the project's domains and capabilities in a read-only local Web UI, with links to supporting change history and evidence.
-- **Incremental updates:** completed Codex tasks supply change evidence. Turn-start Git snapshots and turn-end file versions identify incremental changes; duplicate completion events create one record.
+- **Incremental updates:** completed Codex or Cursor tasks supply change evidence. Turn-start Git snapshots and turn-end file versions identify incremental changes; duplicate completion events create one record.
 - **Code graph evidence:** prefer the locally installed codebase-memory-mcp structured index without reading the full source tree. When unavailable, inspect changed paths only and emit low-confidence domain and capability nodes.
 - **Supporting change ledger:** preserve immutable records, original requirements, feedback attribution, and evidence in `.domainatlas/`.
 - **Git traceability:** derive the first commit containing each record and expose its actual author and committer. `stage-records` previews matching records and stages their facts with `--write` only when the full recorded before/after versions match HEAD and the index.
@@ -105,13 +106,13 @@ The UI supports Chinese and English. On first use, browser regions CN, TW, HK an
 
 ### Change ledger commands
 
-The Codex host integration boundary can ingest a completed task event:
+The host integration boundary can ingest a completed task event:
 
-    domainatlas ingest-codex --request "Add refunds" --summary "Added refund review" --changed-file src/billing/refund.ts --test-command "pnpm test" --test-status passed
+    domainatlas ingest --host cursor --request "Add refunds" --summary "Added refund review" --changed-file src/billing/refund.ts --test-command "pnpm test" --test-status passed
 
-Corrections never overwrite an earlier record:
+`ingest-codex` remains an alias for `ingest --host codex`. Corrections never overwrite an earlier record:
 
-    domainatlas ingest-codex --kind correction --supersedes change_ID --request "Correct the affected scope" --summary "Added omitted capabilities" --changed-file src/billing/refund.ts
+    domainatlas ingest --kind correction --supersedes change_ID --request "Correct the affected scope" --summary "Added omitted capabilities" --changed-file src/billing/refund.ts
 
 Inspect records with their Git-derived lifecycle:
 
@@ -165,7 +166,7 @@ The hook protocol, stdin CLI, Git pre-commit behavior, and real graph-provider i
 
 DomainAtlas 随 AI 辅助开发过程动态更新项目业务图，帮助你理解项目的业务领域和业务能力。业务图是核心能力；仅追加的变更账本是辅助能力，为业务图提供变更证据和可追溯的演进历史。
 
-先配置 codebase-memory 并确认目标项目索引就绪，使用 DomainAtlas skill 分析业务语义，再通过 `domainatlas build --input <文件>` 导入“业务领域 → 业务能力”的初始业务图。缺少分析输入时停止构建，已禁用路径和代码符号自动推断。后续 Codex 任务持续增量更新业务图。初始化本身不构建业务图；初始基线不回放 Git 历史。
+先配置 codebase-memory 并确认目标项目索引就绪，使用 DomainAtlas skill 分析业务语义，再通过 `domainatlas build --input <文件>` 导入“业务领域 → 业务能力”的初始业务图。缺少分析输入时停止构建，已禁用路径和代码符号自动推断。后续 Codex 或 Cursor 任务持续增量更新业务图。初始化本身不构建业务图；初始基线不回放 Git 历史。
 
 ### 安装（推荐）
 
@@ -180,13 +181,14 @@ domainatlas --help
 
 ### 快速开始
 
-**1. 一次性安装 Codex 钩子：**
+**1. 一次性安装宿主钩子（Codex、Cursor，或两者）：**
 
 ```sh
 domainatlas init -g --codex
+domainatlas init -g --cursor
 ```
 
-在 Codex `/hooks` 中审核并信任钩子。
+在 Codex `/hooks` 或 Cursor Settings → Hooks 中审核并信任钩子。用户级 Cursor 钩子不会在 Cloud Agent 中运行。
 
 **2. 初始化每个需要构建业务图的项目：**
 
@@ -195,7 +197,7 @@ cd /path/to/your/git-project
 domainatlas init
 ```
 
-接着正常使用 Codex。已初始化项目会自动记录已完成的轮次，无需提示词前缀或调用技能。如果在一轮任务中途初始化，从下一轮开始记录。未初始化的项目和非 Git 目录会被跳过，不会创建文件。
+接着正常使用已接入的宿主。已初始化项目会自动记录已完成的轮次，无需提示词前缀或调用技能。如果在一轮任务中途初始化，从下一轮开始记录。未初始化的项目和非 Git 目录会被跳过，不会创建文件。
 
 **3. 构建已有项目的业务基线并打开业务图：**
 
@@ -212,7 +214,7 @@ DomainAtlas 技能支持通过自然语言请求构建业务图；自动记录�
 
 ### 在 AI 工具中用自然语言使用
 
-安装 DomainAtlas CLI 后，将[包内技能](skills/domainatlas/SKILL.md)复制到 AI 工具的 skills 目录，并让工具重新加载技能。在**需要分析的目标项目工作区**中发送下面的提示词，AI 工具需能读取项目文件并执行本地命令。Codex 中也可在请求前加 `$domainatlas`，其他工具按各自方式加载技能。当前自动轮次记录通过 Codex hooks 接入，在其他工具中加载技能不会自动启用这些钩子。
+安装 DomainAtlas CLI 后，将[包内技能](skills/domainatlas/SKILL.md)复制到 AI 工具的 skills 目录，并让工具重新加载技能。在**需要分析的目标项目工作区**中发送下面的提示词，AI 工具需能读取项目文件并执行本地命令。Codex 中也可在请求前加 `$domainatlas`，其他工具按各自方式加载技能。当前自动轮次记录通过宿主 hooks 接入（`init -g --codex` 或 `init -g --cursor`），仅加载技能不会启用这些钩子。
 
 **首次初始化并构建有业务含义的业务图：**
 
@@ -240,12 +242,12 @@ AI 负责分析业务语义，再通过 `build --input` 导入基线，CLI 本�
 
 > 用 DomainAtlas 更正记录 change_ID：影响范围应为“退款审核”，不是“整个订单管理”。请核对支撑证据，追加一条引用原记录的更正。
 
-将 `change_ID` 和示例业务名称替换为真实内容。已安装并信任 Codex hooks、且项目已初始化时，后续正常提出开发需求即可，完成的轮次会自动记录，无需每次加 DomainAtlas 前缀。
+将 `change_ID` 和示例业务名称替换为真实内容。已安装并信任宿主 hooks、且项目已初始化时，后续正常提出开发需求即可，完成的轮次会自动记录，无需每次加 DomainAtlas 前缀。
 
 ### 业务图与配套能力
 
 - **项目业务图：**在只读本地 Web UI 中浏览项目的业务领域和业务能力，并查看支撑它们的变更历史及证据。
-- **增量更新：**已完成的 Codex 任务提供变更证据，通过轮次开始时的 Git 快照和结束时的文件版本识别增量变更；重复的完成事件只生成一条记录。
+- **增量更新：**已完成的 Codex 或 Cursor 任务提供变更证据，通过轮次开始时的 Git 快照和结束时的文件版本识别增量变更；重复的完成事件只生成一条记录。
 - **代码图谱证据：**优先使用本地 codebase-memory-mcp 结构化索引，无需读取完整源码树；不可用时仅检查变更路径，生成低置信度的业务领域和能力节点。
 - **辅助变更账本：**在 `.domainatlas/` 中保留不可变记录、原始需求、反馈归属和证据。
 - **Git 追溯：**推导首次包含各条记录的提交，展示实际作者和提交者。`stage-records` 预览匹配记录，只有完整的变更前后版本与 HEAD 和暂存区一致时，才通过 `--write` 暂存其事实文件。
@@ -264,13 +266,13 @@ UI 使用 React 19、TypeScript、Vite 7、Tailwind CSS 4 和 Lucide；本地 AP
 
 ### 变更账本命令
 
-Codex 宿主集成入口可以接收已完成的任务事件：
+宿主集成入口可以接收已完成的任务事件：
 
-    domainatlas ingest-codex --request "新增退款功能" --summary "已新增退款审核" --changed-file src/billing/refund.ts --test-command "pnpm test" --test-status passed
+    domainatlas ingest --host cursor --request "新增退款功能" --summary "已新增退款审核" --changed-file src/billing/refund.ts --test-command "pnpm test" --test-status passed
 
-更正记录不会覆盖此前的记录：
+`ingest-codex` 仍是 `ingest --host codex` 的别名。更正记录不会覆盖此前的记录：
 
-    domainatlas ingest-codex --kind correction --supersedes change_ID --request "更正影响范围" --summary "补充遗漏的业务能力" --changed-file src/billing/refund.ts
+    domainatlas ingest --kind correction --supersedes change_ID --request "更正影响范围" --summary "补充遗漏的业务能力" --changed-file src/billing/refund.ts
 
 查看记录及其由 Git 推导的生命周期：
 

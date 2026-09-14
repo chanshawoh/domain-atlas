@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeSubmitPrompt": [
+      {
+        "command": "node \"$(git rev-parse --show-toplevel)/dist/src/cli.js\" cursor-hook --global",
+        "timeout": 60
+      }
+    ],
+    "afterAgentResponse": [
+      {
+        "command": "node \"$(git rev-parse --show-toplevel)/dist/src/cli.js\" cursor-hook --global",
+        "timeout": 60
+      }
+    ],
+    "stop": [
+      {
+        "command": "node \"$(git rev-parse --show-toplevel)/dist/src/cli.js\" cursor-hook --global",
+        "timeout": 180
+      }
+    ]
+  }
+}

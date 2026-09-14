@@ -1,18 +1,5 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { createStableId } from "../core/model.js";
 import type { CodeGraphProvider } from "../code-graph/provider.js";
-import { git, gitRoot, snapshotChanges, worktreeSnapshot, type GitSnapshot } from "../git/git-snapshot.js";
-import { createDomainAtlasRuntime } from "../runtime.js";
-import type { DevelopmentIdentity } from "../core/model.js";
-import { readDevelopmentIdentity } from "../git/git-identity.js";
-
-interface TurnStart {
-  request: string;
-  snapshot: GitSnapshot;
-  developmentIdentity?: DevelopmentIdentity | null;
-  global?: boolean;
-}
+import { beginHostTurn, completeHostTurn, resolveHostRoot, type HostHookResult } from "./host-turn.js";
 
 function requiredString(input: Record<string, unknown>, field: string): string {
   const value = input[field];
@@ -26,70 +13,31 @@ export async function handleCodexHook(
   input: unknown,
   primaryProvider?: CodeGraphProvider | null,
   global = false,
-): Promise<{ systemMessage?: string }> {
+): Promise<HostHookResult> {
   if (!input || typeof input !== "object") throw new Error("Expected a Codex hook JSON object");
   const event = input as Record<string, unknown>;
   if (event.hook_event_name !== "UserPromptSubmit" && event.hook_event_name !== "Stop") return {};
-  // Project initialization opts into automatic recording. Unrelated repositories
-  // are skipped before creating snapshots, a runtime, or fact files.
-  const root = await gitRoot(requiredString(event, "cwd")).catch((error) => {
-    if (global && /not a git repository/i.test(String(error.message))) return null;
-    throw error;
-  });
-  if (!root) return {};
-  if (global) {
-    const configText = await readFile(path.join(root, ".domainatlas/config.json"), "utf8").catch((error: NodeJS.ErrnoException) => {
-      if (error.code === "ENOENT") return null;
-      throw error;
-    });
-    if (configText === null) return {};
-    try {
-      const config = JSON.parse(configText);
-      if (config?.schemaVersion !== 1 || config?.storage !== "immutable-json-files") throw new Error("unsupported config");
-    } catch {
-      return event.hook_event_name === "UserPromptSubmit"
-        ? { systemMessage: "DomainAtlas: invalid or unsupported .domainatlas/config.json; recording skipped." } : {};
-    }
-  }
+  const resolved = await resolveHostRoot(requiredString(event, "cwd"), global, event.hook_event_name === "UserPromptSubmit");
+  if ("result" in resolved) return resolved.result;
   const sessionId = requiredString(event, "session_id");
   const turnId = requiredString(event, "turn_id");
-  const id = createStableId("change", ["codex-hook", sessionId, turnId]);
-  const stateRoot = path.resolve(root, (await git(root, ["rev-parse", "--git-path", "domainatlas/turns"])).trim());
-  const stateFile = path.join(stateRoot, id + ".json");
-  const runtime = createDomainAtlasRuntime(root, primaryProvider, () => id);
   if (event.hook_event_name === "UserPromptSubmit") {
-    const request = requiredString(event, "prompt");
-    const snapshot = await worktreeSnapshot(root);
-    const developmentIdentity = await readDevelopmentIdentity(root, "turn-start");
-    await mkdir(stateRoot, { recursive: true });
-    await writeFile(stateFile, JSON.stringify({ request, snapshot, developmentIdentity, ...(global ? { global: true } : {}) }), { flag: "wx" }).catch((error: NodeJS.ErrnoException) => {
-      if (error.code !== "EEXIST") throw error;
+    return beginHostTurn({
+      host: "codex",
+      root: resolved.root,
+      sessionId,
+      turnId,
+      request: requiredString(event, "prompt"),
+      global,
     });
-    return {};
   }
-  const start = await readFile(stateFile, "utf8").catch((error: NodeJS.ErrnoException) => {
-    if (error.code === "ENOENT") return null;
-    throw error;
+  return completeHostTurn({
+    host: "codex",
+    root: resolved.root,
+    sessionId,
+    turnId,
+    summary: requiredString(event, "last_assistant_message"),
+    global,
+    provider: primaryProvider,
   });
-  if (!start) return global ? {} : { systemMessage: "DomainAtlas: missing turn-start snapshot; no change record was inferred." };
-  const baseline = JSON.parse(start) as TurnStart;
-  if (global && baseline.global !== true) return {};
-  if ((await runtime.store.listChanges()).some((change) => change.record.id === id)) return {};
-  const summary = requiredString(event, "last_assistant_message");
-  const fileChanges = snapshotChanges(baseline.snapshot, await worktreeSnapshot(root));
-  try {
-    await runtime.adapter.handleTaskCompleted({
-      taskId: sessionId + "/" + turnId,
-      request: baseline.request,
-      developmentIdentity: baseline.developmentIdentity ?? null,
-      summary,
-      changedFiles: fileChanges.map((change) => change.path),
-      fileChanges,
-    });
-  } catch (error) {
-    // Two Stop deliveries can race. Only an already-complete record is a retry.
-    if ((error as NodeJS.ErrnoException).code !== "EEXIST" ||
-      !(await runtime.store.listChanges()).some((change) => change.record.id === id)) throw error;
-  }
-  return {};
 }

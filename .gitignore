@@ -8,3 +8,5 @@ dist/
 # Requirements and development notes are maintained in Obsidian.
 /dev-docs/
 /DEV_STATE.md
+
+.omc/

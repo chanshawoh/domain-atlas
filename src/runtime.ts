@@ -1,4 +1,4 @@
-import { CodexAdapter } from "./adapters/codex.js";
+import { HostAdapter } from "./adapters/host.js";
 import { CodebaseMemoryCliProvider } from "./code-graph/codebase-memory-cli-provider.js";
 import { IncrementalFallbackCodeGraphProvider } from "./code-graph/fallback-provider.js";
 import { CodeGraphProviderChain, type CodeGraphProvider } from "./code-graph/provider.js";
@@ -6,7 +6,7 @@ import { ChangeRecorder } from "./core/change-recorder.js";
 import { FileDomainModelStore } from "./storage/file-domain-model-store.js";
 
 export interface DomainAtlasRuntime {
-  adapter: CodexAdapter;
+  adapter: HostAdapter;
   store: FileDomainModelStore;
 }
 
@@ -27,7 +27,7 @@ export function createDomainAtlasRuntime(
     createId,
   });
   return {
-    adapter: new CodexAdapter(recorder),
+    adapter: new HostAdapter(recorder),
     store,
   };
 }
