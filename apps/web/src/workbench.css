@@ -1,0 +1,91 @@
+/* DomainAtlas night workbench: light is reserved for focus and relationships. */
+:root { color-scheme: dark; --accent: #6fb4ff; --edge: #27364b; }
+body { background: #0c111b; }
+.app-shell { overflow-x: clip; background: radial-gradient(ellipse at 65% 0, #16334b55, transparent 55%); min-height: 100vh; }
+.topbar { background: #0c1421f2; backdrop-filter: blur(16px); border-color: #28384d; }
+.brand { color: #eef5ff; letter-spacing: -.5px; }
+.brand img { filter: brightness(1.5) drop-shadow(0 0 7px #53aaff50); }
+.sidebar { background: #0b131f; border-color: #223248; }
+.sidebar nav button { border-radius: 8px; }
+.sidebar nav button.active { box-shadow: inset 2px 0 #73c7ff; background: linear-gradient(90deg, #183a55, #132237); color: #a0d6ff; }
+.sidebar nav button:hover { color: #e1f0ff; }
+.page-heading h1 { letter-spacing: -.8px; }
+.page-heading p { max-width: 48ch; line-height: 1.8; }
+.metrics { background: linear-gradient(120deg, #192940, #111c2c 65%); border-color: #30435b; padding-top: 24px; padding-bottom: 24px; box-shadow: 0 12px 40px #00000018; }
+.metrics>div>span { color: #a9bbd3; }
+.metrics strong { color: #f0f6ff; font-size: 32px; font-weight: 450; }
+.metrics>div:last-child strong { color: #f0c276; }
+.number-ticker { min-width: 2ch; }
+.panel { border-color: #28384e; box-shadow: 0 8px 28px #00000012; }
+.panel-heading { background: #162235; border-color: #29384e; }
+.panel-heading h2 { display: flex; align-items: center; gap: 9px; }
+.panel-heading h2::before { content: ''; width: 3px; height: 15px; border-radius: 3px; background: #72c5ff; box-shadow: 0 0 12px #5db7ff55; }
+.search { background: #101c2c; }
+.search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px #6fb4ff14; }
+input,select { color: #c3d3e7; }
+.icon-button { background: #152236; }
+.map-body { background-image: radial-gradient(#3b587655 .8px, transparent .8px), radial-gradient(ellipse at top, #173b542e, transparent 75%); }
+.domain-group { position: relative; isolation: isolate; }
+.domain-title { border: 1px solid #395471; background: #1a2c43; color: #c6defa; border-radius: 7px; letter-spacing: .2px; }
+.capabilities { padding-left: 18px; }
+.capabilities::before { background: #2a4058; }
+.capability-card { background: #152235; border-color: #30435d; box-shadow: 0 3px 12px #00000020; z-index: 1; transition: border-color .18s, background .18s, box-shadow .18s; }
+.capability-card:hover { background: #1a2e44; border-color: #517698; }
+.capability-card strong { color: #dde9f9; }
+.capability-card.selected { background: linear-gradient(125deg, #1c4057, #172b43); border-color: #78d1ff; box-shadow: 0 0 0 1px #78d1ff25, 0 0 22px #55b9ff18; }
+.capability-card.selected>strong { color: #b5e8ff; }
+.selection-beam { position: absolute; inset: 0; width: 100%; height: 100%; color: #78d1ff; pointer-events: none; z-index: 0; overflow: visible; filter: drop-shadow(0 0 4px #5ebfff60); }
+.list-view .selection-beam { display: none; }
+.list-view .capabilities { padding-left: 0; }
+.badge,.confidence { border: 1px solid #ffffff0c; }
+.badge.green,.confidence.high { border-color: #78e5b125; }
+.badge.amber,.confidence.medium { border-color: #f0c27625; }
+.badge.red,.confidence.low { border-color: #ffa39d25; }
+.record-row { background: #121e2f; }
+.record-row:hover { background: #1a2c42; }
+.record-row.selected { background: #19324b; }
+.record-summary strong { color: #d9e5f6; }
+.record-meta .capability-tag { border-color: #46668766; background: #21364e; color: #b7d6f6; }
+.detail { background: #101b2b; border-color: #30445f; box-shadow: -12px 0 35px #00000018; }
+.detail-heading { background: #1a2c42; color: #afcce9; }
+.detail-title h2 { color: #edf5ff; }
+.detail-section { border-color: #26374d; }
+.detail-section h3 { color: #c7def9; }
+.detail-section details code { color: #b9cfe8; }
+.files li>div>.file-status.added { color: #78e5b1; }
+.files li>div>.file-status.deleted { color: #ffa39d; }
+.files li>div>.file-status.modified { color: #8acbff; }
+.project-workspace { position: relative; isolation: isolate; padding-top: 52px; }
+.project-workspace::before { content: ''; position: absolute; z-index: -1; top: 0; left: 8%; right: 8%; height: 320px; pointer-events: none; mask-image: radial-gradient(ellipse at 50% 0, #000 10%, transparent 72%); background: radial-gradient(ellipse at 25% 15%, #1696ac20, transparent 55%), radial-gradient(ellipse at 80% 5%, #3867ce25, transparent 55%); }
+.project-workspace .page-heading h1 { font-size: 34px; font-weight: 550; }
+.project-card { background: linear-gradient(145deg, #192b41, #111d2e); border-radius: 14px; min-height: 230px; transition: border-color .2s, box-shadow .2s; }
+.project-card:hover,.project-card:focus-within { border-color: #5495bf; box-shadow: 0 12px 40px #00000030, 0 0 25px #58bfff0c; }
+.project-card-heading>svg { width: 34px; height: 34px; padding: 7px; background: #22435f; border: 1px solid #376080; border-radius: 9px; color: #9bdcff; }
+.project-card-heading h2 { color: #e1efff; }
+.spotlight-card { position: relative; isolation: isolate; }
+.spotlight-card::before { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: -1; background: radial-gradient(300px circle at var(--spot-x, 50%) var(--spot-y, 30%), #62ccff26, transparent 80%); opacity: 0; transition: opacity .25s; }
+.spotlight-card:focus-within::before { opacity: 1; }
+@media(hover:hover) { .spotlight-card:hover::before { opacity: 1; } }
+.project-help { background: #0f1a2a; border-style: dashed; border-color: #354861; box-shadow: none; }
+.project-help pre,.guide pre { background: #0b1421; color: #a7d9fc; border: 1px solid #273d55; }
+.project-help code,.guide code { color: #a7d9fc; }
+.info-banner { border: 1px solid #304a67; }
+.toast { background: #243e58; color: #e4f2ff; border: 1px solid #6087aa; }
+dialog { background: #121e2f; color: #d9e5f6; }
+dialog::backdrop { background: #030912bb; backdrop-filter: blur(4px); }
+dialog .panel-heading { background: #192b41; }
+.empty>svg { color: #79aacf; }
+@media(max-width:760px) {
+  .project-workspace { padding-top: 28px; }
+  .project-workspace .page-heading h1 { font-size: 28px; }
+  .detail { box-shadow: -12px 0 50px #00000080; }
+  .metrics strong { font-size: 28px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .spotlight-card::before { display: none; }
+}
+
+/* Keep map text at least 13px on screen even when the map is zoomed out. */
+.domain-groups .domain-title { font-size: max(14px, var(--map-font-floor, 13px)); }
+.domain-groups .capability-card strong { font-size: max(15px, var(--map-font-floor, 13px)); }
+.domain-groups .confidence,.domain-groups small { font-size: max(13px, var(--map-font-floor, 13px)); }
