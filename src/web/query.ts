@@ -26,7 +26,7 @@ const change = z.object({
   schemaVersion: z.literal(1), id, kind: z.enum(['change', 'correction', 'revert']),
   recordedAt: z.string().refine(value => Number.isFinite(Date.parse(value))),
   request: z.string(), summary: z.string(),
-  source: z.object({ host: z.literal('codex'), taskId: z.string().optional() }).passthrough(),
+  source: z.object({ host: z.enum(['codex', 'cursor']), taskId: z.string().optional() }).passthrough(),
   changedFiles: z.array(z.string()),
   attribution: z.object({ developmentIdentity: developmentIdentity.nullable(), requestedBy: z.array(requirementParty), feedbackBy: z.array(requirementParty) }).optional(),
   fileChanges: z.array(z.object({ path: z.string(), before: version.nullable(), after: version.nullable() })).optional(),

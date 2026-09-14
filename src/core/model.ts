@@ -40,6 +40,8 @@ export interface ChangeEvidence {
 
 export type ChangeKind = "change" | "correction" | "revert";
 
+export type HostId = "codex" | "cursor";
+
 export interface FileVersion {
   oid: string;
   mode: string;
@@ -86,7 +88,7 @@ export interface ChangeRecord {
   request: string;
   summary: string;
   source: {
-    host: "codex";
+    host: HostId;
     taskId?: string;
   };
   changedFiles: string[];

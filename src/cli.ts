@@ -2,12 +2,14 @@
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import type { ChangeKind, TestStatus } from "./core/model.js";
+import type { ChangeKind, HostId, TestStatus } from "./core/model.js";
 import { GitObserver } from "./git/git-observer.js";
 import { createDomainAtlasRuntime } from "./runtime.js";
 import { handleCodexHook } from "./adapters/codex-hooks.js";
+import { handleCursorHook } from "./adapters/cursor-hooks.js";
 import { stageMatchingRecords } from "./git/stage-records.js";
 import { configureCodexHooks } from "./adapters/codex-hook-install.js";
+import { configureCursorHooks } from "./adapters/cursor-hook-install.js";
 import { readFile } from "node:fs/promises";
 import { buildBaseline } from "./core/build-baseline.js";
 import { formatBuildSummary, startBuildProgress } from "./build-output.js";
@@ -36,16 +38,27 @@ function required(args: string[], flag: string): string {
   return found;
 }
 
+async function readHookInput(label: string): Promise<string> {
+  let input = "";
+  for await (const chunk of process.stdin) {
+    input += chunk;
+    if (Buffer.byteLength(input) > 1024 * 1024) throw new Error(label + " hook input exceeds 1 MiB");
+  }
+  return input;
+}
+
 function usage(): string {
   return [
     "Usage:",
     "  domainatlas init",
-    "  domainatlas init -g --codex [--dry-run] [--uninstall] [--codex-home PATH]",
-    "  domainatlas ingest-codex --request TEXT --summary TEXT [--task-id ID] [--kind KIND --supersedes ID] [--changed-file PATH]... [--test-command COMMAND --test-status STATUS]",
+    "  domainatlas init -g --codex|--cursor [--dry-run] [--uninstall] [--codex-home PATH] [--cursor-home PATH]",
+    "  domainatlas ingest [--host HOST] --request TEXT --summary TEXT [--task-id ID] [--kind KIND --supersedes ID] [--changed-file PATH]... [--test-command COMMAND --test-status STATUS]",
+    "  domainatlas ingest-codex ...  (alias for ingest --host codex)",
     "  domainatlas list",
     "  domainatlas build --input FILE [--dry-run] [--max-files 200] [--json]  (current business baseline)",
     "  domainatlas ui [--port 4310] [--scan PATH]...  (all initialized projects)",
     "  domainatlas codex-hook [--global]  (reads one Codex hook JSON object from stdin)",
+    "  domainatlas cursor-hook [--global]  (reads one Cursor hook JSON object from stdin)",
     "  domainatlas stage-records [--write]  (preview by default)",
   ].join("\n");
 }
@@ -55,20 +68,23 @@ function initUsage(): string {
     "Usage: domainatlas init [OPTIONS]",
     "",
     "Without options, initialize .domainatlas at the Git root and register it in the shared project directory.",
-    "With -g --codex, install user-level Codex hooks without initializing the current project.",
+    "With -g --codex or -g --cursor, install user-level host hooks without initializing the current project.",
     "",
-    "  -g, --global       Configure user-level hooks (requires --codex)",
+    "  -g, --global       Configure user-level hooks (requires --codex or --cursor)",
     "      --codex        Target Codex (requires --global)",
+    "      --cursor       Target Cursor (requires --global)",
     "      --dry-run      Preview global hook changes without writing files",
     "      --uninstall    Remove DomainAtlas global hooks, preserving other hooks and facts",
     "      --codex-home PATH  Override CODEX_HOME (default: ~/.codex when unset)",
+    "      --cursor-home PATH Override CURSOR_HOME (default: ~/.cursor when unset)",
     "  -h, --help         Show this help",
     "",
     "Examples:",
     "  domainatlas init",
     "  domainatlas init -g --codex",
+    "  domainatlas init -g --cursor",
     "  domainatlas init -g --codex --dry-run",
-    "  domainatlas init -g --codex --uninstall",
+    "  domainatlas init -g --cursor --uninstall",
   ].join("\n");
 }
 
@@ -82,9 +98,11 @@ async function main(): Promise<void> {
     const { values: options } = parseArgs({ args, allowPositionals: false, options: {
       global: { type: "boolean", short: "g" },
       codex: { type: "boolean" },
+      cursor: { type: "boolean" },
       "dry-run": { type: "boolean" },
       uninstall: { type: "boolean" },
       "codex-home": { type: "string" },
+      "cursor-home": { type: "string" },
       help: { type: "boolean", short: "h" },
     } });
     if (options.help) {
@@ -92,12 +110,20 @@ async function main(): Promise<void> {
       return;
     }
     if (args.length) {
-      if (!options.global || !options.codex) {
-        throw new Error("Global hook options require both --global (-g) and --codex. Use domainatlas init --help.");
+      if (!options.global || (!options.codex && !options.cursor) || (options.codex && options.cursor)) {
+        throw new Error("Global hook options require --global (-g) and exactly one of --codex or --cursor. Use domainatlas init --help.");
       }
-      if (options["codex-home"] !== undefined && !options["codex-home"].trim()) throw new Error("--codex-home must not be empty");
-      const result = await configureCodexHooks({ cliPath: fileURLToPath(import.meta.url),
-        codexHome: options["codex-home"], write: !options["dry-run"], remove: options.uninstall });
+      if (options["codex-home"] !== undefined && (!options.codex || !options["codex-home"].trim())) {
+        throw new Error(options.codex ? "--codex-home must not be empty" : "--codex-home requires --codex");
+      }
+      if (options["cursor-home"] !== undefined && (!options.cursor || !options["cursor-home"].trim())) {
+        throw new Error(options.cursor ? "--cursor-home must not be empty" : "--cursor-home requires --cursor");
+      }
+      const result = options.codex
+        ? await configureCodexHooks({ cliPath: fileURLToPath(import.meta.url),
+          codexHome: options["codex-home"], write: !options["dry-run"], remove: options.uninstall })
+        : await configureCursorHooks({ cliPath: fileURLToPath(import.meta.url),
+          cursorHome: options["cursor-home"], write: !options["dry-run"], remove: options.uninstall });
       process.stdout.write(JSON.stringify(result, null, 2) + "\n");
       return;
     }
@@ -148,14 +174,14 @@ async function main(): Promise<void> {
     }
     return;
   }
-  if (command === "codex-hook") {
-    if (args.length && (args.length !== 1 || args[0] !== "--global")) throw new Error("Usage: domainatlas codex-hook [--global]");
-    let input = "";
-    for await (const chunk of process.stdin) {
-      input += chunk;
-      if (Buffer.byteLength(input) > 1024 * 1024) throw new Error("Codex hook input exceeds 1 MiB");
-    }
-    process.stdout.write(JSON.stringify(await handleCodexHook(JSON.parse(input), undefined, args.includes("--global"))) + "\n");
+  if (command === "codex-hook" || command === "cursor-hook") {
+    const host = command === "codex-hook" ? "Codex" : "Cursor";
+    if (args.length && (args.length !== 1 || args[0] !== "--global")) throw new Error("Usage: domainatlas " + command + " [--global]");
+    const input = JSON.parse(await readHookInput(host));
+    const result = host === "Codex"
+      ? await handleCodexHook(input, undefined, args.includes("--global"))
+      : await handleCursorHook(input, undefined, args.includes("--global"));
+    process.stdout.write(JSON.stringify(result) + "\n");
     return;
   }
   if (command === "stage-records") {
@@ -166,12 +192,17 @@ async function main(): Promise<void> {
   const projectRoot = process.cwd();
   const runtime = createDomainAtlasRuntime(projectRoot);
 
-  if (command === "ingest-codex") {
+  if (command === "ingest" || command === "ingest-codex") {
     const testCommand = value(args, "--test-command");
     const testStatus = value(args, "--test-status");
     const kind = value(args, "--kind");
+    const host = command === "ingest-codex" ? "codex" : (value(args, "--host") ?? "codex");
+    const allowedHosts = new Set<HostId>(["codex", "cursor"]);
     const allowedStatuses = new Set<TestStatus>(["passed", "failed", "not-run"]);
     const allowedKinds = new Set<ChangeKind>(["change", "correction", "revert"]);
+    if (!allowedHosts.has(host as HostId)) {
+      throw new Error("Invalid --host: " + host);
+    }
     if (testStatus && !allowedStatuses.has(testStatus as TestStatus)) {
       throw new Error("Invalid --test-status: " + testStatus);
     }
@@ -182,6 +213,7 @@ async function main(): Promise<void> {
       throw new Error("Invalid --kind: " + kind);
     }
     const recorded = await runtime.adapter.handleTaskCompleted({
+      host: host as HostId,
       request: required(args, "--request"),
       summary: required(args, "--summary"),
       changedFiles: values(args, "--changed-file"),

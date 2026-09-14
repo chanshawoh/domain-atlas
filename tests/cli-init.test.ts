@@ -62,9 +62,10 @@ test("help and invalid init options never accidentally initialize a project or w
   for (const args of [["--help"], ["-h"], ["init", "--help"], ["init", "-h"]]) {
     assert.match((await invoke(args)).stdout, /domainatlas init/);
   }
-  for (const args of [["init", "-g"], ["init", "--codex"], ["init", "--dry-run"], ["init", "--uninstall"],
+  for (const args of [["init", "-g"], ["init", "--codex"], ["init", "--cursor"], ["init", "--dry-run"], ["init", "--uninstall"],
     ["init", "--unknown"], ["init", "project"], ["init", "-g", "--codex", "--write"],
-    ["init", "-g", "--codex", "--codex-home"], ["init", "-g", "--codex", "--codex-home", ""]]) {
+    ["init", "-g", "--codex", "--cursor"], ["init", "-g", "--codex", "--codex-home"], ["init", "-g", "--codex", "--codex-home", ""],
+    ["init", "-g", "--cursor", "--cursor-home"], ["init", "-g", "--cursor", "--cursor-home", ""]]) {
     await assert.rejects(invoke(args));
   }
   await assert.rejects(access(codexHome));
@@ -84,4 +85,32 @@ test("explicit Codex home overrides environment for installation and removal", a
   await invoke(["init", "-g", "--codex", "--codex-home", customHome, "--uninstall"]);
   assert.deepEqual(JSON.parse(await readFile(file, "utf8")).hooks, { UserPromptSubmit: [], Stop: [] });
   await assert.rejects(access(codexHome));
+});
+
+test("init -g --cursor installs immediately, dry-run never writes, and uninstall retains other hooks", async (t) => {
+  const root = await realpath(await mkdtemp(path.join(os.tmpdir(), "atlas-init-cursor-")));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const cursorHome = path.join(root, "cursor-home");
+  const invoke = (args: string[]) => exec(process.execPath, [cli, ...args], {
+    cwd: root, env: { ...process.env, CURSOR_HOME: cursorHome }, timeout: 15_000,
+  });
+  const file = path.join(cursorHome, "hooks.json");
+  const preview = JSON.parse((await invoke(["init", "-g", "--cursor", "--dry-run"])).stdout);
+  assert.equal(preview.written, false);
+  await assert.rejects(access(cursorHome));
+  await mkdir(cursorHome);
+  const other = { command: "./hooks/other.sh" };
+  await writeFile(file, JSON.stringify({ version: 1, hooks: { stop: [other] } }));
+  const installed = JSON.parse((await invoke(["init", "-g", "--cursor"])).stdout);
+  assert.equal(installed.written, true);
+  const config = JSON.parse(await readFile(file, "utf8"));
+  assert.equal(config.hooks.stop.length, 2);
+  assert.deepEqual(config.hooks.stop[0], other);
+  assert.equal(config.hooks.beforeSubmitPrompt.length, 1);
+  const bytes = await readFile(file, "utf8");
+  await invoke(["init", "-g", "--cursor", "--uninstall", "--dry-run"]);
+  assert.equal(await readFile(file, "utf8"), bytes);
+  await invoke(["init", "--global", "--cursor", "--uninstall"]);
+  assert.deepEqual(JSON.parse(await readFile(file, "utf8")).hooks.stop, [other]);
+  await assert.rejects(access(path.join(root, ".domainatlas")));
 });

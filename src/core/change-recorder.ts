@@ -1,6 +1,6 @@
-import type { CodexTaskCompletedEvent } from "../adapters/codex.js";
+import type { TaskCompletedEvent } from "../adapters/host.js";
 import type { BusinessDiscovery, CodeGraphBudget, CodeGraphProvider } from "../code-graph/provider.js";
-import { createChangeId, type ChangeEvidence, type ChangeRecord } from "./model.js";
+import { createChangeId, type ChangeEvidence, type ChangeRecord, type HostId } from "./model.js";
 import type { DomainModelStore, StoredChange } from "./ports.js";
 import { limitDiscovery } from "../code-graph/budget.js";
 import { readDevelopmentIdentity } from "../git/git-identity.js";
@@ -35,15 +35,16 @@ export class ChangeRecorder {
     };
   }
 
-  async recordCodexTask(event: CodexTaskCompletedEvent): Promise<RecordedChange> {
+  async recordTask(event: TaskCompletedEvent): Promise<RecordedChange> {
     const request = event.request.trim();
     const summary = event.summary.trim();
     if (!request) {
-      throw new Error("Codex task request is required");
+      throw new Error("Task request is required");
     }
     if (!summary) {
-      throw new Error("Codex task summary is required");
+      throw new Error("Task summary is required");
     }
+    const host: HostId = event.host ?? "codex";
     const kind = event.kind ?? "change";
     if ((kind === "correction" || kind === "revert") && !event.supersedes) {
       throw new Error(kind + " records must declare supersedes");
@@ -84,7 +85,7 @@ export class ChangeRecorder {
       request,
       summary,
       source: {
-        host: "codex",
+        host,
         ...(event.taskId ? { taskId: event.taskId } : {}),
       },
       changedFiles,
