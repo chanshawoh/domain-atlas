@@ -3,6 +3,7 @@ import { constants } from "node:fs";
 import { randomUUID } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
+import { hookShimPath, isManagedHookCommand, shellQuote, syncHookShim } from "./hook-launch.js";
 
 const marker = "DomainAtlas: 全局业务记录";
 type JsonObject = Record<string, unknown>;
@@ -11,17 +12,14 @@ function object(value: unknown): value is JsonObject {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-function shellQuote(value: string): string {
-  return "'" + value.replaceAll("'", "'\\''") + "'";
-}
-
-function isManaged(handler: unknown): boolean {
+function isManaged(handler: unknown, shim: string): boolean {
   return object(handler) && handler.type === "command" && handler.statusMessage === marker &&
-    typeof handler.command === "string" && handler.command.endsWith(" codex-hook --global");
+    typeof handler.command === "string" && isManagedHookCommand(handler.command, "codex", shim);
 }
 
 export async function hasManagedCodexHooks(codexHome?: string): Promise<boolean> {
-  const file = path.join(path.resolve(codexHome ?? process.env.CODEX_HOME ?? path.join(os.homedir(), ".codex")), "hooks.json");
+  const home = path.resolve(codexHome ?? process.env.CODEX_HOME ?? path.join(os.homedir(), ".codex"));
+  const file = path.join(home, "hooks.json");
   const before = await readFile(file, "utf8").catch((error: NodeJS.ErrnoException) => {
     if (error.code === "ENOENT") return null;
     throw error;
@@ -32,13 +30,14 @@ export async function hasManagedCodexHooks(codexHome?: string): Promise<boolean>
     throw new Error("Invalid Codex hooks configuration: " + file);
   }
   const hooks = (config.hooks ?? {}) as JsonObject;
+  const shim = hookShimPath(home);
   for (const event of ["UserPromptSubmit", "Stop"]) {
     const groups = hooks[event];
     if (groups === undefined) continue;
     if (!Array.isArray(groups)) throw new Error("Invalid Codex hook groups: " + event);
     for (const group of groups) {
       if (!object(group) || !Array.isArray(group.hooks)) throw new Error("Invalid Codex hook group: " + event);
-      if (group.hooks.some(isManaged)) return true;
+      if (group.hooks.some((handler) => isManaged(handler, shim))) return true;
     }
   }
   return false;
@@ -53,10 +52,16 @@ export async function configureCodexHooks(options: {
 }) {
   const home = path.resolve(options.codexHome ?? process.env.CODEX_HOME ?? path.join(os.homedir(), ".codex"));
   const file = path.join(home, "hooks.json");
-  const command = `${shellQuote(path.resolve(options.nodePath ?? process.execPath))} ${shellQuote(path.resolve(options.cliPath))} codex-hook --global`;
+  const nodePath = path.resolve(options.nodePath ?? process.execPath);
+  const cliPath = path.resolve(options.cliPath);
+  const shim = hookShimPath(home);
+  const command = shellQuote(shim);
+  const shimPlan = await syncHookShim({
+    home, host: "codex", nodePath, cliPath, write: false, remove: options.remove,
+  });
   if (!options.remove) {
-    await access(path.resolve(options.cliPath));
-    await access(path.resolve(options.nodePath ?? process.execPath), constants.X_OK);
+    await access(cliPath);
+    await access(nodePath, constants.X_OK);
   }
 
   async function prepare() {
@@ -77,7 +82,7 @@ export async function configureCodexHooks(options: {
       const retained: JsonObject[] = [];
       for (const group of groups) {
         if (!object(group) || !Array.isArray(group.hooks)) throw new Error("Invalid Codex hook group: " + event);
-        const handlers = group.hooks.filter((handler: unknown) => !isManaged(handler));
+        const handlers = group.hooks.filter((handler: unknown) => !isManaged(handler, shim));
         if (handlers.length === group.hooks.length) retained.push(group);
         else if (handlers.length) retained.push({ ...group, hooks: handlers });
       }
@@ -94,7 +99,7 @@ export async function configureCodexHooks(options: {
   if (!options.write) {
     const plan = await prepare();
     return { file, action: options.remove ? "remove" : "install", written: false,
-      changed: plan.changed, ...(options.remove ? {} : { command }),
+      changed: plan.changed || shimPlan.changed, ...(options.remove ? {} : { command }),
       notice: "Preview only. Repeat this command without --dry-run to apply." };
   }
   // Read and merge under a lock; fail closed on concurrent DomainAtlas installers.
@@ -104,7 +109,15 @@ export async function configureCodexHooks(options: {
   const temporary = file + "." + randomUUID() + ".tmp";
   try {
     const plan = await prepare();
-    if (!plan.changed) return { file, written: false, changed: false };
+    const launch = await syncHookShim({
+      home, host: "codex", nodePath, cliPath, write: true, remove: options.remove,
+    });
+    if (!plan.changed && !launch.changed) return { file, written: false, changed: false };
+    if (!plan.changed) {
+      return { file, action: options.remove ? "remove" : "install", written: true, changed: true,
+        ...(options.remove ? {} : { command }),
+        notice: "Review new or changed hooks in Codex /hooks. Hook trust was not modified." };
+    }
     const backup = plan.before === null ? undefined : file + ".domainatlas-" + randomUUID() + ".bak";
     if (backup) await copyFile(file, backup, constants.COPYFILE_EXCL);
     await writeFile(temporary, plan.after, { flag: "wx", mode: plan.mode });
@@ -116,6 +129,7 @@ export async function configureCodexHooks(options: {
     if (current !== plan.before) throw new Error("Codex hooks changed during installation; retry after reviewing the file");
     await rename(temporary, file);
     return { file, action: options.remove ? "remove" : "install", written: true, changed: true,
+      ...(options.remove ? {} : { command }),
       ...(backup ? { backup } : {}), notice: "Review new or changed hooks in Codex /hooks. Hook trust was not modified." };
   } finally {
     await rm(temporary, { force: true });

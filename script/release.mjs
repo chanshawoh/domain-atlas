@@ -143,6 +143,8 @@ export async function release({ cwd = root, publish = false, run = execute, log 
       throw new Error('Installed CLI -v does not match package.json');
     }
     await command(bin, ['init', '--help'], temporary);
+    await command(bin, ['status', '--help'], temporary);
+    await command(bin, ['doctor', '--help'], temporary);
     await command(bin, ['upgrade', '--help'], temporary);
     const hookHome = path.join(temporary, 'hooks-preview');
     const preview = JSON.parse(await command(bin, ['init', '-g', '--codex', '--dry-run', '--codex-home', hookHome], temporary));

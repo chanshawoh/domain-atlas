@@ -58,7 +58,7 @@ domainatlas ui
 
 Open [http://127.0.0.1:4310](http://127.0.0.1:4310) and select your project. Explore the domains and capabilities derived from recorded turns, then inspect supporting changes and evidence. Use `domainatlas list` to inspect the auxiliary ledger; Git determines whether records are pending or committed.
 
-Global hook setup preserves other hooks and backs up the original configuration. It does not initialize the current project. Use `domainatlas init -g --codex --dry-run` to preview installation, `domainatlas init -g --codex --uninstall` to remove its global entries, and `domainatlas init --help` for options. `-g` also accepts `--global`.
+Global hook setup preserves other hooks and backs up the original configuration. It does not initialize the current project. Installed hook commands call a short launcher (`~/.codex/domainatlas-hook` or `~/.cursor/domainatlas-hook`) that pins Node and the CLI, so Cursor/Codex do not need nvm on `PATH`. Use `domainatlas init -g --codex --dry-run` to preview installation, `domainatlas init -g --codex --uninstall` to remove its global entries, and `domainatlas init --help` for options. `-g` also accepts `--global`.
 
 The DomainAtlas skill supports natural-language requests to build a business map; automatic recording is independent of skill invocation.
 
@@ -141,13 +141,15 @@ Preview records that match the currently staged code, then stage their fact file
     domainatlas stage-records
     domainatlas stage-records --write
 
-Check the installed version, or upgrade the published package and refresh already-installed host hooks:
+Check the installed version, inspect hook health, repair broken host installs, or upgrade the published package:
 
     domainatlas -v
+    domainatlas status
+    domainatlas doctor
     domainatlas upgrade
     domainatlas upgrade --dry-run
 
-`--version` and `version` are aliases for `-v`. `upgrade` uses `CODEX_HOME` / `CURSOR_HOME` (or `~/.codex` / `~/.cursor`) unless you pass `--codex-home` / `--cursor-home`. It does not initialize the current project and does not install hooks for hosts that were never configured.
+`--version` and `version` are aliases for `-v`. `status` reports the CLI, Codex/Cursor hook launchers, and the current Git project. `doctor` rewrites already-installed host hooks and leftover launchers; it does not install a host that was never configured or initialize a project. `upgrade` also refreshes installed hosts after downloading a newer npm package. All three use `CODEX_HOME` / `CURSOR_HOME` (or `~/.codex` / `~/.cursor`) unless you pass `--codex-home` / `--cursor-home`.
 
 ### From source (contributors)
 
@@ -245,7 +247,7 @@ domainatlas ui
 
 打开 [http://127.0.0.1:4310](http://127.0.0.1:4310)，选择项目后浏览业务领域和能力，并查看关联变更及证据。使用 `domainatlas list` 查看辅助账本，由 Git 判断记录处于待提交还是已提交状态。
 
-全局钩子安装会保留其他钩子并备份原配置，不会初始化当前项目。使用 `domainatlas init -g --codex --dry-run` 预览安装，使用 `domainatlas init -g --codex --uninstall` 移除其全局配置项，使用 `domainatlas init --help` 查看选项。`-g` 也可写为 `--global`。
+全局钩子安装会保留其他钩子并备份原配置，不会初始化当前项目。写入的钩子命令调用短启动器（`~/.codex/domainatlas-hook` 或 `~/.cursor/domainatlas-hook`），由启动器钉死 Node 和 CLI，因此 Cursor/Codex 不需要 PATH 里有 nvm。使用 `domainatlas init -g --codex --dry-run` 预览安装，使用 `domainatlas init -g --codex --uninstall` 移除其全局配置项，使用 `domainatlas init --help` 查看选项。`-g` 也可写为 `--global`。
 
 DomainAtlas 技能支持通过自然语言请求构建业务图；自动记录独立于技能调用。
 
@@ -328,13 +330,15 @@ UI 使用 React 19、TypeScript、Vite 7、Tailwind CSS 4 和 Lucide；本地 AP
     domainatlas stage-records
     domainatlas stage-records --write
 
-查看已安装版本，或升级已发布的包并刷新已经安装的宿主钩子：
+查看已安装版本、检查钩子健康、修复异常宿主安装，或升级已发布的包：
 
     domainatlas -v
+    domainatlas status
+    domainatlas doctor
     domainatlas upgrade
     domainatlas upgrade --dry-run
 
-`--version` 和 `version` 是 `-v` 的别名。`upgrade` 使用 `CODEX_HOME` / `CURSOR_HOME`（未设置时为 `~/.codex` / `~/.cursor`），也可用 `--codex-home` / `--cursor-home` 覆盖。它不会初始化当前项目，也不会给从未配置过的宿主安装钩子。
+`--version` 和 `version` 是 `-v` 的别名。`status` 报告 CLI、Codex/Cursor 钩子启动器，以及当前 Git 项目。`doctor` 重写已经安装的宿主钩子和残留启动器，不会给从未配置过的宿主装钩子，也不会初始化项目。`upgrade` 在下载更新的 npm 包后也会刷新已安装宿主。三者都使用 `CODEX_HOME` / `CURSOR_HOME`（未设置时为 `~/.codex` / `~/.cursor`），也可用 `--codex-home` / `--cursor-home` 覆盖。
 
 ### 源码安装（开发者）
 

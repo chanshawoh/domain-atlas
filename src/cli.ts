@@ -16,6 +16,7 @@ import { formatBuildSummary, startBuildProgress } from "./build-output.js";
 import { discoverProjects, findGitRoot, registerProject } from "./storage/project-registry.js";
 import { packageVersion } from "./package-info.js";
 import { formatUpgrade, upgradeDomainAtlas, upgradeUsage } from "./upgrade.js";
+import { doctorUsage, formatDoctor, formatStatus, inspectInstall, repairInstall, statusUsage } from "./install-health.js";
 
 function values(args: string[], flag: string): string[] {
   const result: string[] = [];
@@ -30,6 +31,18 @@ function values(args: string[], flag: string): string[] {
 
 function value(args: string[], flag: string): string | undefined {
   return values(args, flag)[0];
+}
+
+const hostHomeOptions = {
+  "dry-run": { type: "boolean" },
+  "codex-home": { type: "string" },
+  "cursor-home": { type: "string" },
+  help: { type: "boolean", short: "h" },
+} as const;
+
+function requireHostHomes(options: { "codex-home"?: string; "cursor-home"?: string }): void {
+  if (options["codex-home"] !== undefined && !options["codex-home"].trim()) throw new Error("--codex-home must not be empty");
+  if (options["cursor-home"] !== undefined && !options["cursor-home"].trim()) throw new Error("--cursor-home must not be empty");
 }
 
 function required(args: string[], flag: string): string {
@@ -53,6 +66,8 @@ function usage(): string {
   return [
     "Usage:",
     "  domainatlas -v, --version",
+    "  domainatlas status [--codex-home PATH] [--cursor-home PATH]",
+    "  domainatlas doctor [--dry-run] [--codex-home PATH] [--cursor-home PATH]",
     "  domainatlas upgrade [--dry-run] [--codex-home PATH] [--cursor-home PATH]",
     "  domainatlas init",
     "  domainatlas init -g --codex|--cursor [--dry-run] [--uninstall] [--codex-home PATH] [--cursor-home PATH]",
@@ -61,6 +76,7 @@ function usage(): string {
     "  domainatlas list",
     "  domainatlas build --input FILE [--dry-run] [--max-files 200] [--json]  (current business baseline)",
     "  domainatlas ui [--port 4310] [--scan PATH]...  (all initialized projects)",
+    "  domainatlas hook codex|cursor  (host hook entry; same as *-hook --global)",
     "  domainatlas codex-hook [--global]  (reads one Codex hook JSON object from stdin)",
     "  domainatlas cursor-hook [--global]  (reads one Cursor hook JSON object from stdin)",
     "  domainatlas stage-records [--write]  (preview by default)",
@@ -102,28 +118,31 @@ async function main(): Promise<void> {
     process.stdout.write(await packageVersion() + "\n");
     return;
   }
-  if (command === "upgrade") {
-    const { values: options } = parseArgs({ args, allowPositionals: false, options: {
-      "dry-run": { type: "boolean" },
-      "codex-home": { type: "string" },
-      "cursor-home": { type: "string" },
-      help: { type: "boolean", short: "h" },
-    } });
+  if (command === "status" || command === "doctor" || command === "upgrade") {
+    const { values: options } = parseArgs({ args, allowPositionals: false, options: hostHomeOptions });
     if (options.help) {
-      process.stdout.write(upgradeUsage() + "\n");
+      process.stdout.write((command === "status" ? statusUsage() : command === "doctor" ? doctorUsage() : upgradeUsage()) + "\n");
       return;
     }
-    if (options["codex-home"] !== undefined && !options["codex-home"].trim()) {
-      throw new Error("--codex-home must not be empty");
+    if (command === "status" && options["dry-run"]) throw new Error("status does not accept --dry-run");
+    requireHostHomes(options);
+    const cliPath = fileURLToPath(import.meta.url);
+    if (command === "status") {
+      const health = await inspectInstall({ cliPath, codexHome: options["codex-home"], cursorHome: options["cursor-home"] });
+      process.stdout.write(formatStatus(health));
+      if (health.hosts.some((host) => host.issues.length)) process.exitCode = 1;
+      return;
     }
-    if (options["cursor-home"] !== undefined && !options["cursor-home"].trim()) {
-      throw new Error("--cursor-home must not be empty");
+    if (command === "doctor") {
+      const result = await repairInstall({
+        cliPath, dryRun: options["dry-run"], codexHome: options["codex-home"], cursorHome: options["cursor-home"],
+      });
+      process.stdout.write(formatDoctor(result));
+      if (result.skipped.length || result.health.hosts.some((host) => host.issues.length)) process.exitCode = 1;
+      return;
     }
     process.stdout.write(formatUpgrade(await upgradeDomainAtlas({
-      cliPath: fileURLToPath(import.meta.url),
-      dryRun: options["dry-run"],
-      codexHome: options["codex-home"],
-      cursorHome: options["cursor-home"],
+      cliPath, dryRun: options["dry-run"], codexHome: options["codex-home"], cursorHome: options["cursor-home"],
     })));
     return;
   }
@@ -207,13 +226,17 @@ async function main(): Promise<void> {
     }
     return;
   }
-  if (command === "codex-hook" || command === "cursor-hook") {
-    const host = command === "codex-hook" ? "Codex" : "Cursor";
-    if (args.length && (args.length !== 1 || args[0] !== "--global")) throw new Error("Usage: domainatlas " + command + " [--global]");
-    const input = JSON.parse(await readHookInput(host));
-    const result = host === "Codex"
-      ? await handleCodexHook(input, undefined, args.includes("--global"))
-      : await handleCursorHook(input, undefined, args.includes("--global"));
+  if (command === "hook" || command === "codex-hook" || command === "cursor-hook") {
+    const host = command === "hook" ? args[0] : command === "codex-hook" ? "codex" : "cursor";
+    if (host !== "codex" && host !== "cursor") throw new Error("Usage: domainatlas hook codex|cursor");
+    if (command === "hook") {
+      if (args.length !== 1) throw new Error("Usage: domainatlas hook " + host);
+    } else if (args.length && (args.length !== 1 || args[0] !== "--global")) {
+      throw new Error("Usage: domainatlas " + command + " [--global]");
+    }
+    const input = JSON.parse(await readHookInput(host === "codex" ? "Codex" : "Cursor"));
+    const global = command === "hook" || args.includes("--global");
+    const result = host === "codex" ? await handleCodexHook(input, undefined, global) : await handleCursorHook(input, undefined, global);
     process.stdout.write(JSON.stringify(result) + "\n");
     return;
   }

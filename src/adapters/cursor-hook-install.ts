@@ -3,6 +3,7 @@ import { constants } from "node:fs";
 import { randomUUID } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
+import { hookShimPath, isManagedHookCommand, shellQuote, syncHookShim } from "./hook-launch.js";
 
 const events = ["beforeSubmitPrompt", "afterAgentResponse", "stop"] as const;
 type JsonObject = Record<string, unknown>;
@@ -11,17 +12,14 @@ function object(value: unknown): value is JsonObject {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-function shellQuote(value: string): string {
-  return "'" + value.replaceAll("'", "'\\''") + "'";
-}
-
-function isManaged(handler: unknown): boolean {
+function isManaged(handler: unknown, shim: string): boolean {
   return object(handler) && (handler.type === undefined || handler.type === "command") &&
-    typeof handler.command === "string" && handler.command.endsWith(" cursor-hook --global");
+    typeof handler.command === "string" && isManagedHookCommand(handler.command, "cursor", shim);
 }
 
 export async function hasManagedCursorHooks(cursorHome?: string): Promise<boolean> {
-  const file = path.join(path.resolve(cursorHome ?? process.env.CURSOR_HOME ?? path.join(os.homedir(), ".cursor")), "hooks.json");
+  const home = path.resolve(cursorHome ?? process.env.CURSOR_HOME ?? path.join(os.homedir(), ".cursor"));
+  const file = path.join(home, "hooks.json");
   const before = await readFile(file, "utf8").catch((error: NodeJS.ErrnoException) => {
     if (error.code === "ENOENT") return null;
     throw error;
@@ -32,11 +30,12 @@ export async function hasManagedCursorHooks(cursorHome?: string): Promise<boolea
     throw new Error("Invalid Cursor hooks configuration: " + file);
   }
   const hooks = (config.hooks ?? {}) as JsonObject;
+  const shim = hookShimPath(home);
   for (const event of events) {
     const group = hooks[event];
     if (group === undefined) continue;
     if (!Array.isArray(group)) throw new Error("Invalid Cursor hook group: " + event);
-    if (group.some(isManaged)) return true;
+    if (group.some((handler) => isManaged(handler, shim))) return true;
   }
   return false;
 }
@@ -50,10 +49,16 @@ export async function configureCursorHooks(options: {
 }) {
   const home = path.resolve(options.cursorHome ?? process.env.CURSOR_HOME ?? path.join(os.homedir(), ".cursor"));
   const file = path.join(home, "hooks.json");
-  const command = `${shellQuote(path.resolve(options.nodePath ?? process.execPath))} ${shellQuote(path.resolve(options.cliPath))} cursor-hook --global`;
+  const nodePath = path.resolve(options.nodePath ?? process.execPath);
+  const cliPath = path.resolve(options.cliPath);
+  const shim = hookShimPath(home);
+  const command = shellQuote(shim);
+  const shimPlan = await syncHookShim({
+    home, host: "cursor", nodePath, cliPath, write: false, remove: options.remove,
+  });
   if (!options.remove) {
-    await access(path.resolve(options.cliPath));
-    await access(path.resolve(options.nodePath ?? process.execPath), constants.X_OK);
+    await access(cliPath);
+    await access(nodePath, constants.X_OK);
   }
 
   async function prepare() {
@@ -71,7 +76,7 @@ export async function configureCursorHooks(options: {
     for (const event of events) {
       const group = hooks[event] ?? [];
       if (!Array.isArray(group)) throw new Error("Invalid Cursor hook group: " + event);
-      const retained = group.filter((handler) => !isManaged(handler));
+      const retained = group.filter((handler) => !isManaged(handler, shim));
       if (!options.remove) {
         retained.push({
           command,
@@ -90,7 +95,7 @@ export async function configureCursorHooks(options: {
   if (!options.write) {
     const plan = await prepare();
     return { file, action: options.remove ? "remove" : "install", written: false,
-      changed: plan.changed, ...(options.remove ? {} : { command }),
+      changed: plan.changed || shimPlan.changed, ...(options.remove ? {} : { command }),
       notice: "Preview only. Repeat this command without --dry-run to apply." };
   }
   await mkdir(home, { recursive: true });
@@ -99,7 +104,15 @@ export async function configureCursorHooks(options: {
   const temporary = file + "." + randomUUID() + ".tmp";
   try {
     const plan = await prepare();
-    if (!plan.changed) return { file, written: false, changed: false };
+    const launch = await syncHookShim({
+      home, host: "cursor", nodePath, cliPath, write: true, remove: options.remove,
+    });
+    if (!plan.changed && !launch.changed) return { file, written: false, changed: false };
+    if (!plan.changed) {
+      return { file, action: options.remove ? "remove" : "install", written: true, changed: true,
+        ...(options.remove ? {} : { command }),
+        notice: "Review new or changed hooks in Cursor Settings → Hooks. User-level hooks do not run in Cloud Agents." };
+    }
     const backup = plan.before === null ? undefined : file + ".domainatlas-" + randomUUID() + ".bak";
     if (backup) await copyFile(file, backup, constants.COPYFILE_EXCL);
     await writeFile(temporary, plan.after, { flag: "wx", mode: plan.mode });
@@ -110,6 +123,7 @@ export async function configureCursorHooks(options: {
     if (current !== plan.before) throw new Error("Cursor hooks changed during installation; retry after reviewing the file");
     await rename(temporary, file);
     return { file, action: options.remove ? "remove" : "install", written: true, changed: true,
+      ...(options.remove ? {} : { command }),
       ...(backup ? { backup } : {}),
       notice: "Review new or changed hooks in Cursor Settings → Hooks. User-level hooks do not run in Cloud Agents." };
   } finally {

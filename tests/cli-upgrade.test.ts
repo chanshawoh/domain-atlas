@@ -69,13 +69,13 @@ test("upgrade refreshes only already-installed hosts and skips npm from a source
   assert.match(current.stdout, /skipped package download/);
   assert.match(current.stdout, /Host hooks already current: codex, cursor/);
   assert.equal(await readFile(file, "utf8"), before);
-  await writeFile(file, before.replaceAll(/'[^']+' '[^']+' codex-hook --global/g, "'/old/node' '/old/cli.js' codex-hook --global"));
+  await writeFile(file, before.replaceAll(/'[^']*domainatlas-hook'/g, "'/old/node' '/old/cli.js' codex-hook --global"));
   const applied = await invoke(["upgrade"]);
   assert.match(applied.stdout, /Refreshed host hooks: codex, cursor/);
   const after = await readFile(file, "utf8");
-  assert.match(after, /codex-hook --global/);
+  assert.match(after, /domainatlas-hook/);
   assert.doesNotMatch(after, /\/old\/cli\.js/);
-  assert.match(await readFile(cursorFile, "utf8"), /cursor-hook --global/);
+  assert.match(await readFile(cursorFile, "utf8"), /domainatlas-hook/);
   await assert.rejects(access(path.join(root, ".domainatlas")));
 });
 
@@ -123,7 +123,8 @@ test("upgrade installs a newer npm package then rewrites only installed host hoo
   assert.equal(applied.packageAction, "install");
   assert.equal(applied.hosts.find((host) => host.name === "codex")?.status, "updated");
   assert.equal(applied.hosts.find((host) => host.name === "cursor")?.status, "absent");
-  assert.match(await readFile(path.join(codexHome, "hooks.json"), "utf8"), /domainatlas[/\\]dist[/\\]src[/\\]cli\.js/);
+  assert.match(await readFile(path.join(codexHome, "hooks.json"), "utf8"), /domainatlas-hook/);
+  assert.match(await readFile(path.join(codexHome, "domainatlas-hook"), "utf8"), /domainatlas[/\\]dist[/\\]src[/\\]cli\.js/);
   await assert.rejects(access(cursorHome));
   assert.equal(isNpmInstalledCli(currentCli), true);
   assert.equal(isNpmInstalledCli(cli), false);

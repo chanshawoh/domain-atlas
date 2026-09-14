@@ -32,7 +32,10 @@ test("init -g --codex installs immediately, dry-run never writes, and uninstall 
   const installed = JSON.parse((await invoke(["init", "-g", "--codex"])).stdout);
   assert.equal(installed.written, true);
   assert.equal(installed.file, file);
+  assert.match(installed.command, /domainatlas-hook/);
+  assert.doesNotMatch(installed.command, /cli\.js/);
   const config = JSON.parse(await readFile(file, "utf8"));
+  assert.match(config.hooks.UserPromptSubmit[0].hooks[0].command, /domainatlas-hook/);
   assert.equal(config.hooks.Stop.length, 2);
   assert.deepEqual(config.hooks.Stop[0], other);
   assert.equal(config.hooks.UserPromptSubmit.length, 1);
@@ -40,9 +43,11 @@ test("init -g --codex installs immediately, dry-run never writes, and uninstall 
   assert.equal(JSON.parse((await invoke(["init", "--codex", "--global"])).stdout).changed, false);
   await invoke(["init", "-g", "--codex", "--uninstall", "--dry-run"]);
   assert.equal(await readFile(file, "utf8"), bytes);
+  await access(path.join(codexHome, "domainatlas-hook"));
   const removed = JSON.parse((await invoke(["init", "--global", "--codex", "--uninstall"])).stdout);
   assert.equal(removed.written, true);
   assert.deepEqual(JSON.parse(await readFile(file, "utf8")).hooks.Stop, [other]);
+  await assert.rejects(access(path.join(codexHome, "domainatlas-hook")));
   await assert.rejects(access(path.join(root, ".domainatlas")));
 });
 
@@ -103,7 +108,9 @@ test("init -g --cursor installs immediately, dry-run never writes, and uninstall
   await writeFile(file, JSON.stringify({ version: 1, hooks: { stop: [other] } }));
   const installed = JSON.parse((await invoke(["init", "-g", "--cursor"])).stdout);
   assert.equal(installed.written, true);
+  assert.match(installed.command, /domainatlas-hook/);
   const config = JSON.parse(await readFile(file, "utf8"));
+  assert.match(config.hooks.beforeSubmitPrompt[0].command, /domainatlas-hook/);
   assert.equal(config.hooks.stop.length, 2);
   assert.deepEqual(config.hooks.stop[0], other);
   assert.equal(config.hooks.beforeSubmitPrompt.length, 1);
