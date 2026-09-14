@@ -1,0 +1,74 @@
+/* DomainAtlas theme tokens: one semantic palette, two themes. */
+/* Values are space-separated RGB channels so alpha variants stay easy. */
+:root {
+  --c-surface: 18 28 43;
+  --c-surface-alt: 16 25 39;
+  --c-surface-muted: 14 23 36;
+  --c-surface-hover: 26 40 60;
+  --c-surface-raised: 28 44 66;
+  --c-bg: 12 17 27;
+  --c-bg-sunken: 11 20 33;
+  --c-border: 39 54 75;
+  --c-border-soft: 37 50 71;
+  --c-border-strong: 67 91 120;
+  --c-fg-strong: 237 244 255;
+  --c-fg: 212 223 239;
+  --c-fg-body: 221 233 249;
+  --c-fg-muted: 169 186 208;
+  --c-fg-faint: 156 175 200;
+  --c-fg-ghost: 71 96 125;
+  --c-accent: 111 180 255;
+  --c-accent-strong: 143 220 255;
+  --c-accent-soft: 23 47 73;
+  --c-accent-border: 120 209 255;
+  --c-success: 120 229 177;
+  --c-success-bg: 18 58 43;
+  --c-warn: 240 194 118;
+  --c-warn-bg: 60 43 22;
+  --c-danger: 255 163 157;
+  --c-danger-bg: 66 31 41;
+  --c-danger-border: 98 52 64;
+  --c-info-bg: 27 46 72;
+  --c-chip: 37 50 70;
+  --c-pattern: 48 64 87;
+  --c-line: 76 102 136;
+  --c-divider: 71 96 125;
+  --c-hairline: 255 255 255;
+  --c-scrim: 3 9 18;
+}
+:root[data-theme="light"] {
+  --c-surface: 255 255 255;
+  --c-surface-alt: 241 243 246;
+  --c-surface-muted: 250 251 253;
+  --c-surface-hover: 245 247 250;
+  --c-surface-raised: 238 240 244;
+  --c-bg: 246 247 249;
+  --c-bg-sunken: 246 247 249;
+  --c-border: 226 230 236;
+  --c-border-soft: 237 240 244;
+  --c-border-strong: 203 210 220;
+  --c-fg-strong: 24 34 48;
+  --c-fg: 38 50 70;
+  --c-fg-body: 51 64 90;
+  --c-fg-muted: 89 101 121;
+  --c-fg-faint: 91 107 130;
+  --c-fg-ghost: 123 140 164;
+  --c-accent: 37 99 235;
+  --c-accent-strong: 29 78 216;
+  --c-accent-soft: 239 246 255;
+  --c-accent-border: 101 144 219;
+  --c-success: 54 122 86;
+  --c-success-bg: 239 248 242;
+  --c-warn: 148 96 34;
+  --c-warn-bg: 255 244 229;
+  --c-danger: 180 35 24;
+  --c-danger-bg: 255 240 240;
+  --c-danger-border: 239 215 210;
+  --c-info-bg: 237 243 255;
+  --c-chip: 243 244 246;
+  --c-pattern: 223 228 236;
+  --c-line: 186 198 216;
+  --c-divider: 199 205 214;
+  --c-hairline: 15 23 42;
+  --c-scrim: 15 23 42;
+}

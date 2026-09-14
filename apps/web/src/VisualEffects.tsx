@@ -41,7 +41,10 @@ export function SpotlightCard({ children, className }: { children: ReactNode; cl
 }
 
 // Adapted from Magic UI AnimatedBeam's measured SVG connection (MIT).
-// A one-time reveal indicates selection, not an ongoing business data flow.
+// The highlight traces the tree that is already on screen: down the domain spine,
+// then into the selected capability. Dropping from the title's centre instead put
+// a horizontal run just above the first card, where it read as a second, misaligned
+// border. A one-time reveal indicates selection, not an ongoing business data flow.
 export function DomainGroup({ children, activeId }: { children: ReactNode; activeId: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
@@ -49,22 +52,24 @@ export function DomainGroup({ children, activeId }: { children: ReactNode; activ
 
   useEffect(() => {
     const container = ref.current!;
-    const from = container.querySelector('.domain-title');
+    const spine = container.querySelector('.capabilities');
     const to = container.querySelector('.capability-card.selected');
-    if (!from || !to) { setBeam({ path: '', width: 1, height: 1 }); return; }
+    if (!spine || !to) { setBeam({ path: '', width: 1, height: 1 }); return; }
     const update = () => {
       const box = container.getBoundingClientRect();
-      const start = from.getBoundingClientRect();
+      const spineBox = spine.getBoundingClientRect();
       const end = to.getBoundingClientRect();
-      const x = start.left - box.left + start.width / 2;
-      const y = start.bottom - box.top;
+      // The map applies a zoom transform, so layout pixels must be scaled.
+      const scale = container.offsetWidth ? box.width / container.offsetWidth : 1;
+      // Offsets match the spine rule drawn by `.capabilities::before`.
+      const x = spineBox.left - box.left + 7 * scale;
+      const y = spineBox.top - box.top + 2 * scale;
       const targetY = end.top - box.top + end.height / 2;
-      const gutter = 5 * box.width / container.offsetWidth;
       setBeam({ width: box.width, height: box.height,
-        path: `M ${x} ${y} V ${y + gutter * 2} H ${gutter} V ${targetY} H ${end.left - box.left}` });
+        path: `M ${x} ${y} V ${targetY} H ${end.left - box.left}` });
     };
     const observer = new ResizeObserver(update);
-    observer.observe(container); observer.observe(from); observer.observe(to);
+    observer.observe(container); observer.observe(spine); observer.observe(to);
     update();
     return () => observer.disconnect();
   }, [activeId, children]);

@@ -24,6 +24,8 @@ export const english: Record<string, string> = {
   "原话依据 · 中置信度": "Original wording · Medium confidence",
   "未识别到明确来源": "No explicit attribution found",
   "未采集": "Not collected",
+  "切换为亮色主题": "Switch to light theme",
+  "切换为暗色主题": "Switch to dark theme",
   "原始记录": "Raw record",
   "关闭原始记录": "Close raw record",
   "项目加载失败": "Failed to load project",
