@@ -1,6 +1,4 @@
 import { useSyncExternalStore } from 'react';
-import { Moon, Sun } from 'lucide-react';
-import { t } from './i18n';
 
 export type Theme = 'light' | 'dark';
 const storageKey = 'domainatlas.ui.theme';
@@ -30,18 +28,9 @@ function applyTheme() {
 }
 applyTheme();
 
-function setTheme(next: Theme) {
+export function setTheme(next: Theme) {
   theme = next;
   try { localStorage.setItem(storageKey, next); } catch { /* Keep the session choice. */ }
   applyTheme();
   listeners.forEach(listener => listener());
-}
-
-export function ThemeSwitcher() {
-  const value = useTheme();
-  const next: Theme = value === 'dark' ? 'light' : 'dark';
-  const label = next === 'light' ? t('切换为亮色主题') : t('切换为暗色主题');
-  return <button className="icon-button theme-switcher" aria-label={label} title={label} onClick={() => setTheme(next)}>
-    {value === 'dark' ? <Sun /> : <Moon />}
-  </button>;
 }

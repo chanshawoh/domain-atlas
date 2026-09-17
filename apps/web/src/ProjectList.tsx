@@ -1,6 +1,6 @@
 import { SpotlightCard } from './VisualEffects';
-import { serviceMessage, t, LanguageSwitcher } from './i18n';
-import { ThemeSwitcher } from './theme';
+import { serviceMessage, t } from './i18n';
+import { SettingsButton } from './settings';
 import { useEffect, useState } from 'react';
 import { AlertCircle, ArrowRight, FolderTree, RefreshCw, Search } from 'lucide-react';
 import type { ProjectDirectory } from '../../../src/storage/project-registry';
@@ -25,7 +25,7 @@ export function ProjectList({ onOpen }: { onOpen: (id: string) => void }) {
   const query = search.trim().toLowerCase();
   const projects = directory?.projects.filter(project => !query || (project.name + ' ' + project.root).toLowerCase().includes(query)) ?? [];
   return <div className="app-shell">
-    <header className="topbar"><div className="brand"><img src="/domainatlas.svg" width="23" height="23" alt="" /><span>DomainAtlas</span></div><span className="muted">{t("项目工作台")}</span><span className="project-meta badge">{t("本地优先")}</span><ThemeSwitcher /><LanguageSwitcher /></header>
+    <header className="topbar"><div className="brand"><img src="/domainatlas.svg" width="23" height="23" alt="" /><span>DomainAtlas</span></div><span className="muted">{t("项目工作台")}</span><span className="project-meta badge">{t("本地优先")}</span><div className="topbar-actions"><SettingsButton /></div></header>
     <main className="project-workspace">
       <div className="page-heading"><div><h1>{t("全部项目")}</h1><p>{t("集中查看已初始化项目的业务图与历史变更")}</p></div><div className="heading-actions"><label className="search"><Search /><input aria-label={t("搜索项目")} placeholder={t("搜索项目名称或路径")} value={search} onChange={event => setSearch(event.target.value)} /></label><button className="icon-button" aria-label={t("刷新项目列表")} disabled={loading} onClick={() => setRevision(value => value + 1)}><RefreshCw className={loading ? 'spinning' : ''} /></button></div></div>
       {error ? <div role="alert" className="error-panel"><AlertCircle /><div><strong>{t("项目列表读取失败")}</strong><p>{serviceMessage(error)}</p><button onClick={() => setRevision(value => value + 1)}>{t("重新加载")}</button></div></div> : loading ? <div className="loading" role="status">{t("正在读取项目列表…")}</div> : <>

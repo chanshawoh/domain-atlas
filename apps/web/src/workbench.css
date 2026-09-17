@@ -184,7 +184,19 @@ dialog .panel-heading { background: rgb(var(--c-surface-alt)); }
 .domain-groups { gap: 34px 24px; }
 @media(max-width:760px) { .domain-groups { gap: 26px 14px; } }
 
-.theme-switcher svg { width: 16px; height: 16px; }
+.settings-button svg { width: 16px; height: 16px; }
+:root[data-density="compact"] .metrics { padding-top: 12px; padding-bottom: 12px; box-shadow: 0 6px 20px rgb(0 0 0 / 7%); }
+:root[data-density="compact"] .metrics strong { font-size: 24px; }
+:root[data-density="compact"] .domain-groups { gap: 18px 14px; }
+:root[data-density="compact"] .domain-group { padding: 6px 8px 8px; border-radius: 10px; }
+:root[data-density="compact"] .capabilities { padding: 10px 0 0 18px; }
+:root[data-density="compact"] .list-view { padding: 4px 12px 8px; }
+:root[data-density="compact"] .list-view .domain-group { padding: 8px 2px 2px; gap: 2px 16px; }
+:root[data-density="compact"] .list-view .domain-title { padding: 8px 0; }
+:root[data-density="compact"] .list-view .capability-card { padding: 8px 8px; }
+:root[data-density="compact"] .project-workspace { padding-top: 28px; }
+:root[data-density="compact"] .project-workspace .page-heading h1 { font-size: 26px; }
+:root[data-density="compact"] .project-card { min-height: 180px; border-radius: 12px; }
 
 /* Light theme: same structure, flatter depth and tinted rather than glowing accents. */
 :root[data-theme="light"] .app-shell { background: radial-gradient(ellipse at 65% 0, rgb(var(--c-accent-soft) / 90%), transparent 55%); }

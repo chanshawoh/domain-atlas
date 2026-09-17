@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { DomainGroup, NumberTicker } from './VisualEffects';
-import { serviceMessage, t, useLocale, getLocale, LanguageSwitcher } from './i18n';
-import { ThemeSwitcher } from './theme';
+import { serviceMessage, t, useLocale, getLocale } from './i18n';
+import { SettingsButton } from './settings';
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import { AlertCircle, ArrowLeft, ArrowRight, BookOpen, Check, CheckCircle2, Circle, Copy, FileCode2, FolderTree, GitBranch, History, List, Map, Maximize, RefreshCw, Search, SlidersHorizontal, X, ZoomIn, ZoomOut } from 'lucide-react';
 import type { BusinessCapability, BusinessDomain, RequirementParty } from '../../../src/core/model';
@@ -137,7 +137,7 @@ function ProjectView({ projectId, onBack }: { projectId: string; onBack: () => v
   </section>;
 
   return <div className="app-shell">
-    <header className="topbar"><div className="brand"><img src="/domainatlas.svg" width="23" height="23" alt="" /><span>DomainAtlas</span></div><div className="project"><span>{data?.project.name ?? t("本地项目")}</span><span className="divider">/</span><span className="muted">{t("业务地图")}</span></div><div className="project-meta"><GitBranch /><code>{data?.project.branch ?? '—'}</code><span className="badge">{t("本地项目")}</span></div><ThemeSwitcher /><LanguageSwitcher /></header>
+    <header className="topbar"><div className="brand"><img src="/domainatlas.svg" width="23" height="23" alt="" /><span>DomainAtlas</span></div><div className="project"><span>{data?.project.name ?? t("本地项目")}</span><span className="divider">/</span><span className="muted">{t("业务地图")}</span></div><div className="project-meta"><GitBranch /><code>{data?.project.branch ?? '—'}</code><span className="badge">{t("本地项目")}</span></div><div className="topbar-actions"><SettingsButton /></div></header>
     <div className="workspace"><aside className="sidebar"><nav aria-label={t("主导航")}><button onClick={onBack}><ArrowLeft />{t("全部项目")}</button>{([{ id: 'map', label: t("业务地图"), icon: Map }, { id: 'changes', label: t("变更记录"), icon: History }, { id: 'guide', label: t("接入说明"), icon: BookOpen }] as const).map(item => <button key={item.id} className={page === item.id ? 'active' : ''} aria-current={page === item.id ? 'page' : undefined} onClick={() => navigate(item.id)}><item.icon />{item.label}</button>)}</nav><div className="storage"><span>{t("本地事实存储")}</span><code>.domainatlas/</code></div></aside>
     <main className="main">
       <div className="page-heading"><div><h1>{page === 'map' ? t("业务地图") : page === 'changes' ? t("变更记录") : t("接入说明")}</h1><p>{page === 'map' ? t("从业务能力追溯每一次变化") : page === 'changes' ? t("每一次变化，都有来源可循") : t("让每次 AI 开发，都留下可追溯的业务变化")}</p></div><div className="heading-actions">{page === 'map' && <label className="search"><Search /><input aria-label={t("搜索业务域或能力")} placeholder={t("搜索业务域或能力")} value={search} onChange={event => setSearch(event.target.value)} /></label>}<button className="icon-button" aria-label={t("刷新项目")} disabled={loading} onClick={() => setRevision(value => value + 1)}><RefreshCw className={loading ? 'spinning' : ''} /></button></div></div>

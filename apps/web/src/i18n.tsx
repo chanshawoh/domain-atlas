@@ -54,17 +54,9 @@ function updateDocument() {
 }
 updateDocument();
 
-function setLocale(next: Locale) {
+export function setLocale(next: Locale) {
   locale = next;
   try { localStorage.setItem(storageKey, next); } catch { /* Keep the session choice. */ }
   updateDocument();
   listeners.forEach(listener => listener());
-}
-
-export function LanguageSwitcher() {
-  const value = useLocale();
-  return <select className="language-switcher" aria-label={t('语言')} value={value}
-    onChange={event => setLocale(event.target.value as Locale)}>
-    <option value="zh">中文</option><option value="en">English</option>
-  </select>;
 }
