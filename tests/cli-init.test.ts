@@ -32,8 +32,7 @@ test("init -g --codex installs immediately, dry-run never writes, and uninstall 
   const installed = JSON.parse((await invoke(["init", "-g", "--codex"])).stdout);
   assert.equal(installed.written, true);
   assert.equal(installed.file, file);
-  assert.match(installed.command, /domainatlas-hook/);
-  assert.doesNotMatch(installed.command, /cli\.js/);
+  assert.equal(installed.command, path.join(codexHome, "domainatlas-hook"));
   const config = JSON.parse(await readFile(file, "utf8"));
   assert.match(config.hooks.UserPromptSubmit[0].hooks[0].command, /domainatlas-hook/);
   assert.equal(config.hooks.Stop.length, 2);
@@ -108,9 +107,9 @@ test("init -g --cursor installs immediately, dry-run never writes, and uninstall
   await writeFile(file, JSON.stringify({ version: 1, hooks: { stop: [other] } }));
   const installed = JSON.parse((await invoke(["init", "-g", "--cursor"])).stdout);
   assert.equal(installed.written, true);
-  assert.match(installed.command, /domainatlas-hook/);
+  assert.equal(installed.command, path.join(cursorHome, "domainatlas-hook"));
   const config = JSON.parse(await readFile(file, "utf8"));
-  assert.match(config.hooks.beforeSubmitPrompt[0].command, /domainatlas-hook/);
+  assert.equal(config.hooks.beforeSubmitPrompt[0].command, path.join(cursorHome, "domainatlas-hook"));
   assert.equal(config.hooks.stop.length, 2);
   assert.deepEqual(config.hooks.stop[0], other);
   assert.equal(config.hooks.beforeSubmitPrompt.length, 1);

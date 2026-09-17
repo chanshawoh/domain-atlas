@@ -3,7 +3,7 @@ import { constants } from "node:fs";
 import { randomUUID } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
-import { hookShimPath, isManagedHookCommand, shellQuote, syncHookShim } from "./hook-launch.js";
+import { hookCommand, hookShimPath, isManagedHookCommand, syncHookShim } from "./hook-launch.js";
 
 const marker = "DomainAtlas: 全局业务记录";
 type JsonObject = Record<string, unknown>;
@@ -55,7 +55,7 @@ export async function configureCodexHooks(options: {
   const nodePath = path.resolve(options.nodePath ?? process.execPath);
   const cliPath = path.resolve(options.cliPath);
   const shim = hookShimPath(home);
-  const command = shellQuote(shim);
+  const command = hookCommand(shim);
   const shimPlan = await syncHookShim({
     home, host: "codex", nodePath, cliPath, write: false, remove: options.remove,
   });

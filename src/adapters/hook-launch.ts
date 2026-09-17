@@ -7,6 +7,11 @@ export function shellQuote(value: string): string {
   return "'" + value.replaceAll("'", "'\\''") + "'";
 }
 
+export function hookCommand(value: string): string {
+  const resolved = path.resolve(value);
+  return /^[A-Za-z0-9._/-]+$/.test(resolved) ? resolved : shellQuote(resolved);
+}
+
 export function hookShimPath(home: string): string {
   return path.join(path.resolve(home), "domainatlas-hook");
 }
@@ -17,7 +22,8 @@ export function hookShimScript(nodePath: string, cliPath: string, host: HookHost
 }
 
 export function isManagedHookCommand(command: string, host: HookHost, shim: string): boolean {
-  return command === shellQuote(path.resolve(shim)) ||
+  const file = path.resolve(shim);
+  return command === hookCommand(file) || command === shellQuote(file) ||
     command.endsWith(" " + host + "-hook --global") ||
     command === "domainatlas hook " + host;
 }
@@ -31,7 +37,7 @@ export async function syncHookShim(options: {
   remove?: boolean;
 }): Promise<{ file: string; command: string; changed: boolean }> {
   const file = hookShimPath(options.home);
-  const command = shellQuote(file);
+  const command = hookCommand(file);
   const existing = await readFile(file, "utf8").catch((error: NodeJS.ErrnoException) => {
     if (error.code === "ENOENT") return null;
     throw error;

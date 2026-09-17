@@ -69,7 +69,13 @@ test("upgrade refreshes only already-installed hosts and skips npm from a source
   assert.match(current.stdout, /skipped package download/);
   assert.match(current.stdout, /Host hooks already current: codex, cursor/);
   assert.equal(await readFile(file, "utf8"), before);
-  await writeFile(file, before.replaceAll(/'[^']*domainatlas-hook'/g, "'/old/node' '/old/cli.js' codex-hook --global"));
+  const stale = JSON.parse(before) as { hooks: Record<string, { hooks?: { command?: string }[] }[]> };
+  for (const groups of Object.values(stale.hooks)) {
+    for (const group of groups) {
+      for (const handler of group.hooks ?? []) handler.command = "'/old/node' '/old/cli.js' codex-hook --global";
+    }
+  }
+  await writeFile(file, JSON.stringify(stale, null, 2) + "\n");
   const applied = await invoke(["upgrade"]);
   assert.match(applied.stdout, /Refreshed host hooks: codex, cursor/);
   const after = await readFile(file, "utf8");

@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { configureCodexHooks } from "./adapters/codex-hook-install.js";
 import { configureCursorHooks } from "./adapters/cursor-hook-install.js";
-import { hookShimPath, hookShimScript, isManagedHookCommand, shellQuote } from "./adapters/hook-launch.js";
+import { hookCommand, hookShimPath, hookShimScript, isManagedHookCommand } from "./adapters/hook-launch.js";
 import { isNpmInstalledCli, packageVersion } from "./package-info.js";
 import { findGitRoot } from "./storage/project-registry.js";
 
@@ -222,7 +222,7 @@ async function inspectHost(name: HostName, home: string, nodePath: string, cliPa
   report.installed = commands.length > 0;
   report.command = commands[0];
   if (report.installed) {
-    const expected = shellQuote(shim);
+    const expected = hookCommand(shim);
     if (commands.some((command) => command.endsWith(" " + name + "-hook --global"))) {
       report.issues.push({ code: "legacy-command", message: "Hook command still uses a pinned Node/CLI path", fixable: true });
     }
