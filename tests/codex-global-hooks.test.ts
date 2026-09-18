@@ -8,6 +8,7 @@ import { configureCodexHooks } from "../src/adapters/codex-hook-install.js";
 import { handleCodexHook } from "../src/adapters/codex-hooks.js";
 import { git } from "../src/git/git-snapshot.js";
 import { createDomainAtlasRuntime } from "../src/runtime.js";
+import { registerProject } from "../src/storage/project-registry.js";
 
 async function temporary(t: { after: (fn: () => Promise<unknown>) => void }) {
   const root = await realpath(await mkdtemp(path.join(os.tmpdir(), "atlas-global-")));
@@ -159,4 +160,32 @@ test("installed absolute command runs from different projects and subdirectories
     assert.equal(changes.length, 1);
     assert.deepEqual(changes[0].record.changedFiles, ["feature.ts"]);
   }
+});
+
+test("global hooks fall back to registered projects under an aggregate workspace directory and skip untouched siblings", async (t) => {
+  const parent = await temporary(t);
+  const previous = process.env.DOMAINATLAS_HOME;
+  process.env.DOMAINATLAS_HOME = path.join(parent, "registry");
+  t.after(() => { if (previous === undefined) delete process.env.DOMAINATLAS_HOME; else process.env.DOMAINATLAS_HOME = previous; });
+  const workspace = path.join(parent, "workspace");
+  await mkdir(workspace);
+  const touched = await repository(workspace, "touched", true);
+  const untouched = await repository(workspace, "untouched", true);
+  await registerProject(touched);
+  await registerProject(untouched);
+
+  await globalHook(event(workspace, "UserPromptSubmit", "turn-9"));
+  await writeFile(path.join(touched, "refund.ts"), "export const refund = true;\n");
+  await globalHook(event(workspace, "Stop", "turn-9"));
+
+  const recorded = await createDomainAtlasRuntime(touched, null).store.listChanges();
+  assert.equal(recorded.length, 1);
+  assert.deepEqual(recorded[0].record.changedFiles, ["refund.ts"]);
+  assert.equal(recorded[0].record.source.host, "codex");
+  assert.deepEqual(await createDomainAtlasRuntime(untouched, null).store.listChanges(), []);
+
+  const empty = path.join(parent, "empty");
+  await mkdir(empty);
+  assert.deepEqual(await globalHook(event(empty, "UserPromptSubmit", "turn-empty")), {});
+  assert.deepEqual(await globalHook(event(empty, "Stop", "turn-empty")), {});
 });

@@ -8,6 +8,7 @@ import { handleCursorHook } from "../src/adapters/cursor-hooks.js";
 import { configureCursorHooks } from "../src/adapters/cursor-hook-install.js";
 import { git } from "../src/git/git-snapshot.js";
 import { createDomainAtlasRuntime } from "../src/runtime.js";
+import { registerProject } from "../src/storage/project-registry.js";
 
 async function repository(t: { after: (fn: () => Promise<unknown>) => void }, initialized = false): Promise<string> {
   const root = await realpath(await mkdtemp(path.join(os.tmpdir(), "domainatlas-cursor-")));
@@ -115,4 +116,40 @@ test("Cursor installer previews, preserves other hooks, and uninstalls only its 
   assert.equal((await configureCursorHooks({ cliPath, cursorHome, write: true })).changed, false);
   await configureCursorHooks({ cliPath, cursorHome, remove: true, write: true });
   assert.deepEqual(JSON.parse(await readFile(file, "utf8")).hooks.stop, [other]);
+});
+
+test("global Cursor hooks record into initialized projects registered below an aggregate workspace directory", async (t) => {
+  const parent = await realpath(await mkdtemp(path.join(os.tmpdir(), "atlas-workspace-")));
+  t.after(() => rm(parent, { recursive: true, force: true }));
+  const previous = process.env.DOMAINATLAS_HOME;
+  process.env.DOMAINATLAS_HOME = path.join(parent, "registry");
+  t.after(() => { if (previous === undefined) delete process.env.DOMAINATLAS_HOME; else process.env.DOMAINATLAS_HOME = previous; });
+  const workspace = path.join(parent, "workspace");
+  const nested = async (name: string, initialized: boolean) => {
+    const root = path.join(workspace, name);
+    await mkdir(root, { recursive: true });
+    await git(root, ["init", "-b", "main"]);
+    await git(root, ["config", "core.hooksPath", "/dev/null"]);
+    await mkdir(path.join(root, "src"));
+    if (initialized) await createDomainAtlasRuntime(root, null).store.initialize();
+    return root;
+  };
+  await mkdir(workspace);
+  const touched = await nested("touched", true);
+  const untouched = await nested("untouched", true);
+  const plain = await nested("plain", false);
+  assert.ok(await registerProject(touched));
+  assert.ok(await registerProject(untouched));
+  assert.equal(await registerProject(plain), null);
+
+  await handleCursorHook(event(workspace, "beforeSubmitPrompt"), null, true);
+  await writeFile(path.join(touched, "src/refund.ts"), "export const refund = true;\n");
+  await handleCursorHook(event(workspace, "afterAgentResponse"), null, true);
+  await handleCursorHook(event(workspace, "stop"), null, true);
+
+  const [change] = await createDomainAtlasRuntime(touched, null).store.listChanges();
+  assert.deepEqual(change.record.changedFiles, ["src/refund.ts"]);
+  assert.deepEqual(await createDomainAtlasRuntime(untouched, null).store.listChanges(), []);
+  await access(path.join(untouched, ".git/domainatlas/turns"));
+  await assert.rejects(access(path.join(plain, ".git/domainatlas")));
 });

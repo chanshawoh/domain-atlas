@@ -58,7 +58,7 @@ domainatlas ui
 
 Open [http://127.0.0.1:4310](http://127.0.0.1:4310) and select your project. Explore the domains and capabilities derived from recorded turns, then inspect supporting changes and evidence. Use `domainatlas list` to inspect the auxiliary ledger; Git determines whether records are pending or committed.
 
-Global hook setup preserves other hooks and backs up the original configuration. It does not initialize the current project. Installed hook commands call a short launcher (`~/.codex/domainatlas-hook` or `~/.cursor/domainatlas-hook`) that pins Node and the CLI, so Cursor/Codex do not need nvm on `PATH`. Use `domainatlas init -g --codex --dry-run` to preview installation, `domainatlas init -g --codex --uninstall` to remove its global entries, and `domainatlas init --help` for options. `-g` also accepts `--global`.
+Global hook setup preserves other hooks and backs up the original configuration. It does not initialize the current project. Installed hook commands call a short launcher (`~/.codex/domainatlas-hook` or `~/.cursor/domainatlas-hook`) that pins Node and the CLI, so Cursor/Codex do not need nvm on `PATH`. Use `domainatlas init -g --codex --dry-run` to preview installation, `domainatlas init -g --codex --uninstall` to remove its global entries, and `domainatlas init --help` for options. `-g` also accepts `--global`. When the workspace directory is not itself an initialized project, for example a folder holding several repositories, recording falls back to the initialized projects registered under that directory; a project the turn did not change stays untouched.
 
 The DomainAtlas skill supports natural-language requests to build a business map; automatic recording is independent of skill invocation.
 
@@ -247,7 +247,7 @@ domainatlas ui
 
 打开 [http://127.0.0.1:4310](http://127.0.0.1:4310)，选择项目后浏览业务领域和能力，并查看关联变更及证据。使用 `domainatlas list` 查看辅助账本，由 Git 判断记录处于待提交还是已提交状态。
 
-全局钩子安装会保留其他钩子并备份原配置，不会初始化当前项目。写入的钩子命令调用短启动器（`~/.codex/domainatlas-hook` 或 `~/.cursor/domainatlas-hook`），由启动器钉死 Node 和 CLI，因此 Cursor/Codex 不需要 PATH 里有 nvm。使用 `domainatlas init -g --codex --dry-run` 预览安装，使用 `domainatlas init -g --codex --uninstall` 移除其全局配置项，使用 `domainatlas init --help` 查看选项。`-g` 也可写为 `--global`。
+全局钩子安装会保留其他钩子并备份原配置，不会初始化当前项目。写入的钩子命令调用短启动器（`~/.codex/domainatlas-hook` 或 `~/.cursor/domainatlas-hook`），由启动器钉死 Node 和 CLI，因此 Cursor/Codex 不需要 PATH 里有 nvm。使用 `domainatlas init -g --codex --dry-run` 预览安装，使用 `domainatlas init -g --codex --uninstall` 移除其全局配置项，使用 `domainatlas init --help` 查看选项。`-g` 也可写为 `--global`。当工作区目录本身不是已初始化的项目时（例如一个存放多个仓库的外层目录），记录会回退到登记在该目录之下、已初始化的项目；本轮没有改动的项目不会产生记录。
 
 DomainAtlas 技能支持通过自然语言请求构建业务图；自动记录独立于技能调用。
 

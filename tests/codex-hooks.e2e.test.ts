@@ -200,3 +200,15 @@ test("a pending correction cannot be staged without its unmatched predecessor", 
   assert.deepEqual(plan.records, []);
   assert.ok(plan.skipped.some((item) => item.reason.includes("supersedes target")));
 });
+
+test("nested repositories in the working tree do not abort the turn snapshot", async (t) => {
+  const root = await repository(t);
+  await handleCodexHook(hook(root, "UserPromptSubmit"), null);
+  await mkdir(path.join(root, "vendor/nested"), { recursive: true });
+  await git(path.join(root, "vendor/nested"), ["init", "-b", "main"]);
+  await writeFile(path.join(root, "vendor/nested/file.ts"), "export const vendored = true;\n");
+  await writeFile(path.join(root, "src/refund.ts"), "export const refund = true;\n");
+  await handleCodexHook(hook(root, "Stop"), null);
+  const [change] = await createDomainAtlasRuntime(root, null).store.listChanges();
+  assert.deepEqual(change.record.changedFiles, ["src/refund.ts"]);
+});

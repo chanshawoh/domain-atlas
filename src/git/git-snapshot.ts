@@ -68,9 +68,10 @@ export async function worktreeSnapshot(root: string): Promise<GitSnapshot> {
       throw error;
     });
     if (!stat) { delete snapshot[file]; continue; }
-    if (!stat.isFile() && !stat.isSymbolicLink()) {
-      throw new Error("Unsupported changed Git entry (for example a submodule): " + file);
-    }
+    // ponytail: directories (nested repositories, submodule worktrees) carry no file content to hash,
+    // so the index view is kept and only that entry is left out of the turn diff. Hashing a gitlink
+    // oid from the nested repository is the upgrade path if submodule bumps must be recorded.
+    if (!stat.isFile() && !stat.isSymbolicLink()) continue;
     const oid = stat.isSymbolicLink()
       ? await git(root, ["hash-object", "--stdin"], await readlink(absolute))
       : await git(root, ["hash-object", "--path=" + file, "--", file]);

@@ -1,12 +1,23 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, realpath, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { CodeGraphProvider } from "../code-graph/provider.js";
 import { createStableId, type DevelopmentIdentity, type HostId } from "../core/model.js";
 import { readDevelopmentIdentity } from "../git/git-identity.js";
 import { git, gitRoot, snapshotChanges, worktreeSnapshot, type GitSnapshot } from "../git/git-snapshot.js";
 import { createDomainAtlasRuntime } from "../runtime.js";
+import { listProjects } from "../storage/project-registry.js";
 
 export type HostHookResult = { systemMessage?: string };
+
+export interface HostRoots {
+  roots: string[];
+  /**
+   * The roots came from the global project registry because the workspace directory is not an
+   * initialized project itself. Unrelated sibling projects must then prove a real file change
+   * before a record is written.
+   */
+  registryFallback: boolean;
+}
 
 interface TurnStart {
   request: string;
@@ -25,22 +36,22 @@ async function turnStateFile(root: string, id: string): Promise<string> {
   return path.join(stateRoot, id + ".json");
 }
 
-export async function resolveHostRoot(
+export async function resolveHostRoots(
   cwd: string,
   global: boolean,
   isStart: boolean,
-): Promise<{ root: string } | { result: HostHookResult }> {
+): Promise<HostRoots | { result: HostHookResult }> {
   const root = await gitRoot(cwd).catch((error) => {
     if (global && /not a git repository/i.test(String(error.message))) return null;
     throw error;
   });
-  if (!root) return { result: {} };
-  if (!global) return { root };
+  if (!root) return registeredRoots(cwd);
+  if (!global) return { roots: [root], registryFallback: false };
   const configText = await readFile(path.join(root, ".domainatlas/config.json"), "utf8").catch((error: NodeJS.ErrnoException) => {
     if (error.code === "ENOENT") return null;
     throw error;
   });
-  if (configText === null) return { result: {} };
+  if (configText === null) return registeredRoots(cwd);
   try {
     const config = JSON.parse(configText);
     if (config?.schemaVersion !== 1 || config?.storage !== "immutable-json-files") throw new Error("unsupported config");
@@ -51,7 +62,25 @@ export async function resolveHostRoot(
         : {},
     };
   }
-  return { root };
+  return { roots: [root], registryFallback: false };
+}
+
+/**
+ * An aggregate workspace directory (for example a folder holding several repositories) is not a Git
+ * root, so the global hook records into the initialized projects registered below it. Projects the
+ * turn did not touch drop out through their own empty turn snapshots.
+ */
+async function registeredRoots(cwd: string): Promise<HostRoots | { result: HostHookResult }> {
+  const directory = await realpath(cwd).catch(() => null);
+  if (!directory) return { result: {} };
+  const prefix = directory + path.sep;
+  const roots = (await listProjects()).projects
+    .filter((project) => project.status === "available" && project.root.startsWith(prefix))
+    .map((project) => project.root)
+    .sort();
+  // An initialized outer project owns its whole tree, so drop roots nested inside another registered root.
+  const outermost = roots.filter((root) => !roots.some((other) => root.startsWith(other + path.sep)));
+  return outermost.length ? { roots: outermost, registryFallback: true } : { result: {} };
 }
 
 export async function beginHostTurn(options: {

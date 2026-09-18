@@ -1,6 +1,6 @@
 {
   "name": "domainatlas",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Local business change ledger and workbench for AI-assisted development",
   "type": "module",
   "files": [

@@ -1,5 +1,5 @@
 import type { CodeGraphProvider } from "../code-graph/provider.js";
-import { beginHostTurn, completeHostTurn, noteHostTurnSummary, resolveHostRoot, type HostHookResult } from "./host-turn.js";
+import { beginHostTurn, completeHostTurn, noteHostTurnSummary, resolveHostRoots, type HostHookResult } from "./host-turn.js";
 
 const startEvents = new Set(["beforeSubmitPrompt"]);
 const summaryEvents = new Set(["afterAgentResponse"]);
@@ -41,13 +41,17 @@ export async function handleCursorHook(
     throw new Error("Missing Cursor hook field: workspace_roots");
   }
   let message: string | undefined;
+  const targets = new Set<string>();
   for (const cwd of roots) {
-    const resolved = await resolveHostRoot(cwd, global, startEvents.has(name));
+    const resolved = await resolveHostRoots(cwd, global, startEvents.has(name));
     if ("result" in resolved) {
       message ??= resolved.result.systemMessage;
       continue;
     }
-    const common = { host: "cursor" as const, root: resolved.root, sessionId, turnId, global };
+    for (const root of resolved.roots) targets.add(root);
+  }
+  for (const root of targets) {
+    const common = { host: "cursor" as const, root, sessionId, turnId, global };
     const result = startEvents.has(name)
       ? await beginHostTurn({ ...common, request: requiredString(event, "prompt") })
       : summaryEvents.has(name)
