@@ -32,7 +32,7 @@ test("installed graph CLI indexes a fixture and completes a real provider ingest
   await mkdir(path.join(root, "src/billing"), { recursive: true });
   await writeFile(path.join(root, "src/billing/refund.ts"), "export class Refund { approve(): boolean { return true; } }\n");
   await graph(["index_repository", "--repo-path", root, "--name", name, "--mode", "fast"]);
-  const status = await graph(["index_status", "--project", name]) as { status: string };
+  const status = await graph(["index_status", "--project", name, "--format", "json"]) as { status: string };
   assert.equal(status.status, "ready");
   const runtime = createDomainAtlasRuntime(root);
   const recorded = await runtime.adapter.handleTaskCompleted({

@@ -13,11 +13,23 @@ function fixture(calls: string[][] = []): CodeGraphCliRunner {
   return async (args) => {
     calls.push(args);
     if (args[0] === "list_projects") return JSON.stringify({ projects: [{ name: "indexed-project", root_path: "/project" }] });
-    if (args[0] === "get_architecture") return JSON.stringify({ packages: [{ name: "billing" }] });
-    return JSON.stringify({ results: [
-      { name: "WrongRefund", qualified_name: "other.Refund", file_path: "src/other/refund.ts", is_test: false, label: "Class" },
-      { name: "Refund", qualified_name: "project.billing.Refund", file_path: "src/billing/refund.ts", is_test: false, label: "Class" },
-    ] });
+    if (args[0] === "get_architecture") return JSON.stringify({
+      project: "indexed-project",
+      packages: { cols: ["name", "nodes", "fan_in", "fan_out"], rows: [["billing", 12, 0, 0]] },
+    });
+    return JSON.stringify({
+      qn_rule: 'qn = qn_prefix == "" ? name : qn_prefix + "." + name',
+      cols: ["name", "label", "lines", "in", "out", "is_test"],
+      groups: [
+        { qn_prefix: "other", file: "src/other/refund.ts", rows: [["WrongRefund", "Class", "1-9", 0, 0, false]] },
+        { qn_prefix: "project.billing", file: "src/billing/refund.ts", rows: [
+          ["RefundTest", "Class", "30-40", 0, 0, true],
+          ["Refund", "Class", "1-20", 3, 0, false],
+        ] },
+      ],
+      total: 3,
+      returned: 3,
+    });
   };
 }
 
@@ -31,6 +43,8 @@ test("CLI provider bounds queries, filters non-code before budgeting and matches
   assert.ok(calls[2].includes("--file-pattern"));
   assert.equal(calls[2][calls[2].indexOf("--file-pattern") + 1], "src/billing/refund.ts");
   assert.ok(calls[2].includes("--limit"));
+  // 0.11 prints a tree unless JSON output is requested explicitly.
+  for (const args of calls) assert.deepEqual(args.slice(-2), ["--format", "json"]);
 });
 
 test("both providers honor zero, odd node limits and conservative token limits", async () => {
@@ -78,4 +92,19 @@ test("only unavailable projects fall back; malformed output and process defects 
   await assert.rejects(run(async () => "not json"), /Invalid codebase-memory-mcp response/);
   await assert.rejects(run(async () => '{"error":"bad query"}'), /Invalid codebase-memory-mcp response/);
   await assert.rejects(run(async () => { throw new Error("process exited 1"); }), /process exited 1/);
+});
+
+test("pre-0.11 responses name the version boundary instead of a generic parse error", async () => {
+  const run = (runner: CodeGraphCliRunner) => new CodeGraphProviderChain(
+    new CodebaseMemoryCliProvider(runner), new IncrementalFallbackCodeGraphProvider(),
+  ).discover(context);
+  const projects = JSON.stringify({ projects: [{ name: "indexed-project", root_path: "/project" }] });
+  const legacyArchitecture = async (args: string[]) => args[0] === "list_projects" ? projects
+    : args[0] === "get_architecture" ? JSON.stringify({ packages: [{ name: "billing" }] })
+      : JSON.stringify({ results: [] });
+  await assert.rejects(run(legacyArchitecture), /pre-0\.11 response format.*0\.11\.0 or newer/);
+  const legacySearch = async (args: string[]) => args[0] === "list_projects" ? projects
+    : args[0] === "get_architecture" ? JSON.stringify({ packages: { cols: ["name"], rows: [["billing"]] } })
+      : JSON.stringify({ results: [{ name: "Refund", qualified_name: "p.Refund", file_path: "src/billing/refund.ts", is_test: false, label: "Class" }] });
+  await assert.rejects(run(legacySearch), /pre-0\.11 response format.*0\.11\.0 or newer/);
 });

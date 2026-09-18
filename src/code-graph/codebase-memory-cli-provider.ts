@@ -18,24 +18,33 @@ interface ProjectListResponse {
   projects: IndexedProject[];
 }
 
-interface ArchitecturePackage {
-  name: string;
+// Since 0.11 the CLI returns column-oriented tables under `--format json`, with
+// search hits grouped by file instead of a flat result list.
+interface ColumnarTable {
+  cols: string[];
+  rows: unknown[][];
 }
 
 interface ArchitectureResponse {
-  packages: ArchitecturePackage[];
+  packages: ColumnarTable;
 }
 
-interface SearchResult {
+interface SearchGroup {
+  qn_prefix: string;
+  file: string;
+  rows: unknown[][];
+}
+
+interface SearchResponse extends Pick<ColumnarTable, "cols"> {
+  groups: SearchGroup[];
+}
+
+interface FoundSymbol {
   name: string;
-  qualified_name: string;
-  file_path: string;
-  is_test: boolean;
   label: string;
-}
-
-interface SearchResponse {
-  results: SearchResult[];
+  filePath: string;
+  qualifiedName: string;
+  isTest: boolean;
 }
 
 const CODE_EXTENSIONS = new Set([
@@ -77,8 +86,88 @@ function parseJson<T>(output: string, operation: string): T {
   try {
     return JSON.parse(output) as T;
   } catch {
-    throw new Error("Invalid codebase-memory-mcp response for " + operation);
+    throw invalidResponse(operation);
   }
+}
+
+// `--format json` is required because 0.11 prints a human-readable tree by default.
+const JSON_FORMAT = ["--format", "json"] as const;
+
+function invalidResponse(operation: string): Error {
+  return new Error("Invalid codebase-memory-mcp response for " + operation);
+}
+
+// 0.11 replaced the flat JSON shapes with column-oriented tables and grouped search hits.
+// Naming that boundary beats a generic parse error when an older CLI is still on PATH.
+function outdatedResponse(operation: string): Error {
+  return new Error(
+    "codebase-memory-mcp is too old for DomainAtlas: " + operation +
+    " returned the pre-0.11 response format; 0.11.0 or newer is required. Run `codebase-memory-mcp update`.",
+  );
+}
+
+function isLegacyShape(value: unknown): boolean {
+  if (Array.isArray(value)) return true;
+  return typeof value === "object" && value !== null && Array.isArray((value as { results?: unknown }).results);
+}
+
+function requireTable(value: unknown, operation: string): ColumnarTable {
+  const table = value as Partial<ColumnarTable> | null | undefined;
+  if (
+    !table ||
+    !Array.isArray(table.cols) ||
+    !table.cols.every((column) => typeof column === "string") ||
+    !Array.isArray(table.rows) ||
+    !table.rows.every((row) => Array.isArray(row))
+  ) {
+    throw invalidResponse(operation);
+  }
+  return { cols: table.cols, rows: table.rows };
+}
+
+function requireColumn(table: Pick<ColumnarTable, "cols">, name: string, operation: string): number {
+  const index = table.cols.indexOf(name);
+  if (index < 0) throw invalidResponse(operation);
+  return index;
+}
+
+function packageNames(response: ArchitectureResponse): string[] {
+  if (isLegacyShape(response.packages)) throw outdatedResponse("get_architecture");
+  const table = requireTable(response.packages, "get_architecture");
+  const index = requireColumn(table, "name", "get_architecture");
+  const names = table.rows.map((row) => row[index]);
+  if (names.some((name) => typeof name !== "string")) throw invalidResponse("get_architecture");
+  return names as string[];
+}
+
+function findSymbols(response: SearchResponse): FoundSymbol[] {
+  if (isLegacyShape(response)) throw outdatedResponse("search_graph");
+  if (!Array.isArray(response.cols) || !Array.isArray(response.groups)) {
+    throw invalidResponse("search_graph");
+  }
+  const nameIndex = requireColumn(response, "name", "search_graph");
+  const labelIndex = requireColumn(response, "label", "search_graph");
+  const testIndex = response.cols.indexOf("is_test");
+  const symbols: FoundSymbol[] = [];
+  for (const group of response.groups) {
+    if (typeof group.qn_prefix !== "string" || typeof group.file !== "string" || !Array.isArray(group.rows)) {
+      throw invalidResponse("search_graph");
+    }
+    for (const row of group.rows) {
+      if (!Array.isArray(row)) throw invalidResponse("search_graph");
+      const name = row[nameIndex];
+      const label = row[labelIndex];
+      if (typeof name !== "string" || typeof label !== "string") throw invalidResponse("search_graph");
+      symbols.push({
+        name,
+        label,
+        filePath: group.file,
+        qualifiedName: group.qn_prefix ? group.qn_prefix + "." + name : name,
+        isTest: testIndex >= 0 && row[testIndex] === true,
+      });
+    }
+  }
+  return symbols;
 }
 
 export class CodeGraphResponseLimitError extends Error {}
@@ -155,7 +244,8 @@ export class CodebaseMemoryCliProvider implements CodeGraphProvider {
     };
     try {
       // Project routing metadata is separately bounded and never used as model context.
-      const projects = parseJson<ProjectListResponse>(await this.runner(["list_projects"], 128 * 1024), "list_projects");
+      const projects = parseJson<ProjectListResponse>(
+        await this.runner(["list_projects", ...JSON_FORMAT], 128 * 1024), "list_projects");
       if (!Array.isArray(projects.projects) || projects.projects.some((item) =>
         typeof item.name !== "string" || typeof item.root_path !== "string")) {
         throw new Error("Invalid codebase-memory-mcp response for list_projects");
@@ -168,11 +258,9 @@ export class CodebaseMemoryCliProvider implements CodeGraphProvider {
       }
 
       const architecture = await query<ArchitectureResponse>(
-        ["get_architecture", "--project", project.name, "--aspects", "packages"],
+        ["get_architecture", "--project", project.name, "--aspects", "packages", ...JSON_FORMAT],
       );
-      if (!Array.isArray(architecture.packages) || architecture.packages.some((item) => typeof item.name !== "string")) {
-        throw new Error("Invalid codebase-memory-mcp response for get_architecture");
-      }
+      const architecturePackages = packageNames(architecture);
       const searchableFiles = context.changedFiles
         .filter(isBusinessCodeFile)
         .slice(0, context.budget.maxSnippetReads);
@@ -184,10 +272,10 @@ export class CodebaseMemoryCliProvider implements CodeGraphProvider {
           break;
         }
         const segments = pathSegments(changedFile);
-        const architecturePackage = architecture.packages.find((candidate) =>
-          segments.includes(candidate.name.toLowerCase()),
+        const domainName = architecturePackages.find((candidate) =>
+          segments.includes(candidate.toLowerCase()),
         );
-        if (!architecturePackage) {
+        if (!domainName) {
           continue;
         }
 
@@ -200,19 +288,20 @@ export class CodebaseMemoryCliProvider implements CodeGraphProvider {
           symbolPattern(fileStem),
           "--file-pattern", changedFile,
           "--limit", String(Math.min(context.budget.maxNodes, 20)),
+          // `is_test` is not part of the default projection.
+          "--fields", "is_test",
+          ...JSON_FORMAT,
         ]);
-        if (!Array.isArray(search.results)) throw new Error("Invalid codebase-memory-mcp response for search_graph");
-        const symbol = search.results.find(
+        const symbol = findSymbols(search).find(
           (result) =>
-            !result.is_test &&
-            result.file_path === changedFile &&
+            !result.isTest &&
+            result.filePath === changedFile &&
             ["Class", "Function", "Interface", "Method", "Type"].includes(result.label),
         );
-        const domainName = architecturePackage.name;
         const capabilityName = symbol?.name ?? readableCapabilityName(fileStem);
         const domainId = createStableId("domain", [domainName]);
         const capabilityId = createStableId("capability", [domainId, capabilityName]);
-        const reference = symbol?.qualified_name ?? changedFile;
+        const reference = symbol?.qualifiedName ?? changedFile;
         const evidence = {
           source: this.name,
           reference,

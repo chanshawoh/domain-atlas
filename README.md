@@ -106,7 +106,7 @@ Replace `change_ID` and the example business names with real values. Once host h
 
 - **Business map:** explore the project's domains and capabilities in a read-only local Web UI, with links to supporting change history and evidence.
 - **Incremental updates:** completed Codex or Cursor tasks supply change evidence. Turn-start Git snapshots and turn-end file versions identify incremental changes; duplicate completion events create one record.
-- **Code graph evidence:** prefer the locally installed codebase-memory-mcp structured index without reading the full source tree. When unavailable, inspect changed paths only and emit low-confidence domain and capability nodes.
+- **Code graph evidence:** prefer the locally installed codebase-memory-mcp structured index without reading the full source tree. Requires **codebase-memory-mcp 0.11.0 or newer**; older builds answer with the pre-0.11 response format, and recording stops with an explicit version message instead of degrading silently. When unavailable, inspect changed paths only and emit low-confidence domain and capability nodes.
 - **Supporting change ledger:** preserve immutable records, original requirements, feedback attribution, and evidence in `.domainatlas/`.
 - **Git traceability:** derive the first commit containing each record and expose its actual author and committer. `stage-records` previews matching records and stages their facts with `--write` only when the full recorded before/after versions match HEAD and the index.
 
@@ -170,7 +170,7 @@ Run checks in the tool repository:
 
 ```sh
 pnpm test
-# Optional: requires an installed codebase-memory-mcp
+# Optional: requires an installed codebase-memory-mcp 0.11.0 or newer
 pnpm test:graph
 ```
 
@@ -295,7 +295,7 @@ AI 负责分析业务语义，再通过 `build --input` 导入基线，CLI 本�
 
 - **项目业务图：**在只读本地 Web UI 中浏览项目的业务领域和业务能力，并查看支撑它们的变更历史及证据。
 - **增量更新：**已完成的 Codex 或 Cursor 任务提供变更证据，通过轮次开始时的 Git 快照和结束时的文件版本识别增量变更；重复的完成事件只生成一条记录。
-- **代码图谱证据：**优先使用本地 codebase-memory-mcp 结构化索引，无需读取完整源码树；不可用时仅检查变更路径，生成低置信度的业务领域和能力节点。
+- **代码图谱证据：**优先使用本地 codebase-memory-mcp 结构化索引，无需读取完整源码树；要求 **codebase-memory-mcp 0.11.0 或更新版本**，更早的版本返回 0.11 之前的响应格式，记录会明确提示版本过旧并停止，而不是静默降级；不可用时仅检查变更路径，生成低置信度的业务领域和能力节点。
 - **辅助变更账本：**在 `.domainatlas/` 中保留不可变记录、原始需求、反馈归属和证据。
 - **Git 追溯：**推导首次包含各条记录的提交，展示实际作者和提交者。`stage-records` 预览匹配记录，只有完整的变更前后版本与 HEAD 和暂存区一致时，才通过 `--write` 暂存其事实文件。
 
@@ -359,7 +359,7 @@ pnpm domainatlas -v
 
 ```sh
 pnpm test
-# 可选：需要已安装 codebase-memory-mcp
+# 可选：需要已安装 codebase-memory-mcp 0.11.0 或更新版本
 pnpm test:graph
 ```
 
